@@ -80,7 +80,8 @@ export const AssetModal: React.FC<AssetModalProps> = ({ isOpen, onClose, onSave,
             if (file) {
                 const bucket = type === 'video' ? 'videos' : 'photos'; // Simple mapping
                 try {
-                    url = await uploadProjectFile(file, bucket);
+                    const path = `${Date.now()}_${file.name}`;
+                    url = await uploadProjectFile(file, bucket, path);
                 } catch (err) {
                     console.error("Upload failed", err);
                     alert("Falha no upload do arquivo. Tente novamente.");

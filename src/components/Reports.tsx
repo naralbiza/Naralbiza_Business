@@ -5,16 +5,9 @@ import { Modal } from './common/Modal';
 import { PlusIcon } from './common/Icon';
 import { Report, Employee, SalesReport, CreativeReport, ITReport, HRReport, Lead, CalendarEvent } from '../types';
 import { getReportSummary } from '../services/geminiService';
+import { formatCurrency } from '../utils';
 
-interface ReportModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: (report: Omit<Report, 'id'>) => void;
-    currentUser: Employee;
-    reportToEdit?: Report | null;
-    leads: Lead[];
-    events: CalendarEvent[];
-}
+
 
 interface ReportModalProps {
     isOpen: boolean;

@@ -29,7 +29,7 @@ export const PublicDelivery: React.FC = () => {
                 }
 
                 // Increment view count
-                await incrementDeliveryViews(data.id, data.views);
+                await incrementDeliveryViews(data.id);
 
             } catch (err) {
                 console.error(err);
