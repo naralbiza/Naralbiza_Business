@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Card } from './common/Card';
 import { Modal } from './common/Modal';
 import { PlusIcon } from './common/Icon';
-import { Report, Employee, SalesReport, CreativeReport, ITReport, Lead, CalendarEvent } from '../types';
+import { Report, Employee, SalesReport, CreativeReport, ITReport, HRReport, Lead, CalendarEvent } from '../types';
 import { getReportSummary } from '../services/geminiService';
 
 interface ReportModalProps {
@@ -92,7 +92,11 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onSave, curr
                 return (
                     <>
                         <input name="leadsContacted" type="number" value={(reportData as Partial<SalesReport>).leadsContacted || ''} onChange={handleInputChange} placeholder="Leads Contactados" className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+                        <input name="salesQualifiedLeads" type="number" value={(reportData as Partial<SalesReport>).salesQualifiedLeads || ''} onChange={handleInputChange} placeholder="Leads Qualificados" className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                        <input name="salesProposalsSent" type="number" value={(reportData as Partial<SalesReport>).salesProposalsSent || ''} onChange={handleInputChange} placeholder="Propostas Enviadas" className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
                         <input name="contractsSigned" type="number" value={(reportData as Partial<SalesReport>).contractsSigned || ''} onChange={handleInputChange} placeholder="Contratos Assinados" className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+                        <input name="salesRevenue" type="number" value={(reportData as Partial<SalesReport>).salesRevenue || ''} onChange={handleInputChange} placeholder="Receita Gerada (AOA)" className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                        <input name="salesConversionRate" type="number" step="0.1" value={(reportData as Partial<SalesReport>).salesConversionRate || ''} onChange={handleInputChange} placeholder="Taxa de Conversão (%)" className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
                         <textarea name="nextActions" value={(reportData as Partial<SalesReport>).nextActions || ''} onChange={handleInputChange} placeholder="Próximas Ações" rows={3} className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white" required></textarea>
                     </>
                 );
@@ -105,6 +109,22 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onSave, curr
                         <input name="hoursOnLocation" type="number" value={(reportData as Partial<CreativeReport>).hoursOnLocation || ''} onChange={handleInputChange} placeholder="Horas em Locação" className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
                         <textarea name="equipmentUsed" value={(reportData as Partial<CreativeReport>).equipmentUsed || ''} onChange={handleInputChange} placeholder="Equipamento Utilizado" rows={2} className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
                         <textarea name="nextSteps" value={(reportData as Partial<CreativeReport>).nextSteps || ''} onChange={handleInputChange} placeholder="Próximos Passos" rows={3} className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white" required></textarea>
+                    </>
+                );
+
+            case 'HR':
+                return (
+                    <>
+                        <textarea name="hrEmployees" value={(reportData as Partial<HRReport>).hrEmployees || ''} onChange={handleInputChange} placeholder="Colaboradores" rows={2} className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                        <textarea name="hrFreelancers" value={(reportData as Partial<HRReport>).hrFreelancers || ''} onChange={handleInputChange} placeholder="Freelancers" rows={2} className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                        <textarea name="hrRoles" value={(reportData as Partial<HRReport>).hrRoles || ''} onChange={handleInputChange} placeholder="Funções" rows={2} className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                        <textarea name="hrPerformance" value={(reportData as Partial<HRReport>).hrPerformance || ''} onChange={handleInputChange} placeholder="Avaliação de desempenho" rows={2} className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                        <input name="hrPerformanceScore" type="number" min="0" max="100" value={(reportData as Partial<HRReport>).hrPerformanceScore || ''} onChange={handleInputChange} placeholder="Nota de Desempenho (0-100)" className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                        <textarea name="hrProductivity" value={(reportData as Partial<HRReport>).hrProductivity || ''} onChange={handleInputChange} placeholder="Produtividade" rows={2} className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                        <input name="hrProductivityScore" type="number" min="0" max="100" value={(reportData as Partial<HRReport>).hrProductivityScore || ''} onChange={handleInputChange} placeholder="Nota de Produtividade (0-100)" className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                        <textarea name="hrAbsences" value={(reportData as Partial<HRReport>).hrAbsences || ''} onChange={handleInputChange} placeholder="Faltas" rows={2} className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                        <textarea name="hrTraining" value={(reportData as Partial<HRReport>).hrTraining || ''} onChange={handleInputChange} placeholder="Capacitação" rows={2} className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                        <textarea name="hrCulture" value={(reportData as Partial<HRReport>).hrCulture || ''} onChange={handleInputChange} placeholder="Cultura & feedback" rows={2} className="p-2 border rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
                     </>
                 );
             case 'IT':
@@ -139,6 +159,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onSave, curr
                             <option value="Creative">Criativo</option>
                             <option value="Photographer">Fotógrafo</option>
                             <option value="Videomaker">Videomaker</option>
+                            <option value="HR">RH & Performance</option>
                             <option value="IT">TI</option>
                             <option value="Other">Outros</option>
                         </select>
@@ -197,7 +218,11 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, employee, onUpdateStatu
         switch (report.role) {
             case 'Sales': return <>
                 <p><strong>Leads Contactados:</strong> {report.leadsContacted}</p>
+                {report.salesQualifiedLeads !== undefined && <p><strong>Leads Qualificados:</strong> {report.salesQualifiedLeads}</p>}
+                {report.salesProposalsSent !== undefined && <p><strong>Propostas Enviadas:</strong> {report.salesProposalsSent}</p>}
                 <p><strong>Contratos Assinados:</strong> {report.contractsSigned}</p>
+                {report.salesRevenue !== undefined && <p><strong>Receita Gerada:</strong> {formatCurrency(report.salesRevenue)}</p>}
+                {report.salesConversionRate !== undefined && <p><strong>Taxa de Conversão:</strong> {report.salesConversionRate}%</p>}
                 <p><strong>Próximas Ações:</strong> {report.nextActions}</p>
             </>;
             case 'Creative':
@@ -213,6 +238,17 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, employee, onUpdateStatu
                 <p><strong>Manutenção:</strong> {report.systemsMaintenance}</p>
                 <p><strong>Impedimentos:</strong> {report.blockers}</p>
             </>;
+            case 'HR': return <>
+                <p><strong>Colaboradores:</strong> {report.hrEmployees}</p>
+                <p><strong>Freelancers:</strong> {report.hrFreelancers}</p>
+                <p><strong>Funções:</strong> {report.hrRoles}</p>
+                <p><strong>Avaliação de desempenho:</strong> {report.hrPerformance} {report.hrPerformanceScore !== undefined && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full ml-1">Nota: {report.hrPerformanceScore}</span>}</p>
+                <p><strong>Produtividade:</strong> {report.hrProductivity} {report.hrProductivityScore !== undefined && <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full ml-1">Nota: {report.hrProductivityScore}</span>}</p>
+                <p><strong>Faltas:</strong> {report.hrAbsences}</p>
+                <p><strong>Capacitação:</strong> {report.hrTraining}</p>
+                <p><strong>Cultura & feedback:</strong> {report.hrCulture}</p>
+            </>;
+
             default: return null;
         }
     };

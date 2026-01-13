@@ -3,10 +3,11 @@ import { Card } from './common/Card';
 import { Goal, Employee, GoalUpdate } from '../types';
 import { Modal } from './common/Modal';
 import { PlusIcon } from './common/Icon';
+import { formatCurrency } from '../utils';
 
 const formatValue = (value: number, unit: Goal['unit']) => {
     if (unit === 'currency') {
-        return `Kz ${value.toLocaleString('pt-BR')}`;
+        return formatCurrency(value);
     }
     return value;
 };
@@ -33,7 +34,7 @@ const GoalModal: React.FC<{
         onSave(goal);
         onClose();
     };
-    
+
     const handleAddUpdateSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (goalToEdit && newUpdate.trim()) {
@@ -51,44 +52,44 @@ const GoalModal: React.FC<{
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={goalToEdit ? 'Editar Meta' : 'Nova Meta'}>
             <form onSubmit={handleSubmit} className="space-y-4">
-                 <input name="title" value={'title' in goal ? goal.title : ''} onChange={handleChange} placeholder="Título da Meta" className="p-2 border rounded w-full" required />
-                 <div className="grid grid-cols-2 gap-4">
+                <input name="title" value={'title' in goal ? goal.title : ''} onChange={handleChange} placeholder="Título da Meta" className="p-2 border rounded w-full" required />
+                <div className="grid grid-cols-2 gap-4">
                     <input name="current" type="number" value={'current' in goal ? goal.current : ''} onChange={handleChange} placeholder="Valor Atual" className="p-2 border rounded w-full" required />
                     <input name="target" type="number" value={'target' in goal ? goal.target : ''} onChange={handleChange} placeholder="Valor Alvo" className="p-2 border rounded w-full" required />
-                 </div>
-                 <div className="grid grid-cols-2 gap-4">
-                     <select name="type" value={'type' in goal ? goal.type : 'team'} onChange={handleChange} className="p-2 border rounded w-full">
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <select name="type" value={'type' in goal ? goal.type : 'team'} onChange={handleChange} className="p-2 border rounded w-full">
                         <option value="team">Equipe</option>
                         <option value="individual">Individual</option>
                     </select>
-                     <select name="unit" value={'unit' in goal ? goal.unit : 'count'} onChange={handleChange} className="p-2 border rounded w-full">
+                    <select name="unit" value={'unit' in goal ? goal.unit : 'count'} onChange={handleChange} className="p-2 border rounded w-full">
                         <option value="count">Contagem</option>
-                        <option value="currency">Moeda (Kz)</option>
+                        <option value="currency">Moeda (AOA)</option>
                     </select>
-                 </div>
-                 <div>
+                </div>
+                <div>
                     <label className="text-sm">Prazo Final</label>
                     <input name="deadline" type="date" value={'deadline' in goal ? goal.deadline : ''} onChange={handleChange} className="p-2 border rounded w-full" required />
-                 </div>
-                 {goal.type === 'individual' && (
-                     <select name="employeeId" value={'employeeId' in goal ? goal.employeeId || '' : ''} onChange={handleChange} className="p-2 border rounded w-full" required>
-                         <option value="">Selecione um funcionário</option>
-                         {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-                     </select>
-                 )}
+                </div>
+                {goal.type === 'individual' && (
+                    <select name="employeeId" value={'employeeId' in goal ? goal.employeeId || '' : ''} onChange={handleChange} className="p-2 border rounded w-full" required>
+                        <option value="">Selecione um funcionário</option>
+                        {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                    </select>
+                )}
 
                 {goalToEdit && (
                     <div>
-                         <h4 className="font-semibold mt-4">Histórico de Progresso</h4>
-                         <form onSubmit={handleAddUpdateSubmit} className="flex gap-2 mt-2">
-                             <input value={newUpdate} onChange={e => setNewUpdate(e.target.value)} placeholder="Adicionar atualização..." className="flex-grow p-2 border rounded"/>
-                             <button type="submit" className="px-4 py-2 rounded text-white bg-brand-dark hover:bg-black">Adicionar</button>
-                         </form>
+                        <h4 className="font-semibold mt-4">Histórico de Progresso</h4>
+                        <form onSubmit={handleAddUpdateSubmit} className="flex gap-2 mt-2">
+                            <input value={newUpdate} onChange={e => setNewUpdate(e.target.value)} placeholder="Adicionar atualização..." className="flex-grow p-2 border rounded" />
+                            <button type="submit" className="px-4 py-2 rounded text-white bg-brand-dark hover:bg-black">Adicionar</button>
+                        </form>
                     </div>
                 )}
 
 
-                 <div className="flex justify-end gap-4 mt-6">
+                <div className="flex justify-end gap-4 mt-6">
                     <button type="button" onClick={onClose} className="px-4 py-2 rounded text-gray-600 bg-gray-200 hover:bg-gray-300">Cancelar</button>
                     <button type="submit" className="px-4 py-2 rounded text-white bg-brand-dark hover:bg-black">Salvar</button>
                 </div>
@@ -110,9 +111,9 @@ const GoalCard: React.FC<{ goal: Goal; employees: Employee[], onEdit: () => void
                     <h3 className="font-semibold text-lg text-brand-dark dark:text-gray-100">{goal.title}</h3>
                     {employee && <p className="text-sm text-brand-secondary dark:text-gray-400">{employee.name}</p>}
                 </div>
-                 <span className={`text-xs font-bold px-2 py-1 rounded-full ${daysLeft < 0 ? 'bg-red-200 text-red-800' : 'bg-gray-200 text-gray-800'}`}>
+                <span className={`text-xs font-bold px-2 py-1 rounded-full ${daysLeft < 0 ? 'bg-red-200 text-red-800' : 'bg-gray-200 text-gray-800'}`}>
                     {daysLeft < 0 ? `Atrasado em ${Math.abs(daysLeft)} dias` : `${daysLeft} dias restantes`}
-                 </span>
+                </span>
             </div>
             <div className="mt-4">
                 <div className="flex justify-between items-end">
@@ -126,7 +127,7 @@ const GoalCard: React.FC<{ goal: Goal; employees: Employee[], onEdit: () => void
                     ></div>
                 </div>
             </div>
-             <div className="mt-4 text-right space-x-2">
+            <div className="mt-4 text-right space-x-2">
                 <button onClick={onEdit} className="text-xs text-blue-600 hover:underline">Detalhes</button>
                 <button onClick={onDelete} className="text-xs text-red-600 hover:underline">Remover</button>
             </div>
@@ -163,7 +164,7 @@ export const Goals: React.FC<GoalsProps> = ({ employees, goals, onAddGoal, onUpd
         setIsModalOpen(true);
     };
 
-    const handleSaveGoal = (goalData: Omit<Goal, 'id'|'updates'> | Goal) => {
+    const handleSaveGoal = (goalData: Omit<Goal, 'id' | 'updates'> | Goal) => {
         if ('id' in goalData) {
             onUpdateGoal(goalData);
         } else {
@@ -173,28 +174,28 @@ export const Goals: React.FC<GoalsProps> = ({ employees, goals, onAddGoal, onUpd
 
     return (
         <>
-        <div className="p-8 space-y-8">
-             <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold text-brand-dark dark:text-gray-100">Metas</h2>
-                <button onClick={openAddModal} className="flex items-center gap-2 bg-brand-gold text-brand-dark font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-yellow-500 transition-colors">
-                    <PlusIcon className="w-5 h-5"/>
-                    Nova Meta
-                </button>
-            </div>
-            <div>
-                <h2 className="text-2xl font-bold text-brand-dark dark:text-gray-200 mb-4">Metas da Equipe</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {teamGoals.map(goal => <GoalCard key={goal.id} goal={goal} employees={employees} onEdit={() => openEditModal(goal)} onDelete={() => onDeleteGoal(goal.id)} />)}
+            <div className="p-8 space-y-8">
+                <div className="flex justify-between items-center">
+                    <h2 className="text-3xl font-bold text-brand-dark dark:text-gray-100">Metas</h2>
+                    <button onClick={openAddModal} className="flex items-center gap-2 bg-brand-gold text-brand-dark font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-yellow-500 transition-colors">
+                        <PlusIcon className="w-5 h-5" />
+                        Nova Meta
+                    </button>
+                </div>
+                <div>
+                    <h2 className="text-2xl font-bold text-brand-dark dark:text-gray-200 mb-4">Metas da Equipe</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {teamGoals.map(goal => <GoalCard key={goal.id} goal={goal} employees={employees} onEdit={() => openEditModal(goal)} onDelete={() => onDeleteGoal(goal.id)} />)}
+                    </div>
+                </div>
+                <div>
+                    <h2 className="text-2xl font-bold text-brand-dark dark:text-gray-200 mb-4">Metas Individuais</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {individualGoals.map(goal => <GoalCard key={goal.id} goal={goal} employees={employees} onEdit={() => openEditModal(goal)} onDelete={() => onDeleteGoal(goal.id)} />)}
+                    </div>
                 </div>
             </div>
-            <div>
-                <h2 className="text-2xl font-bold text-brand-dark dark:text-gray-200 mb-4">Metas Individuais</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {individualGoals.map(goal => <GoalCard key={goal.id} goal={goal} employees={employees} onEdit={() => openEditModal(goal)} onDelete={() => onDeleteGoal(goal.id)} />)}
-                </div>
-            </div>
-        </div>
-        <GoalModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveGoal} employees={employees} goalToEdit={goalToEdit} onAddUpdate={onAddGoalUpdate} />
+            <GoalModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveGoal} employees={employees} goalToEdit={goalToEdit} onAddUpdate={onAddGoalUpdate} />
         </>
     );
 };

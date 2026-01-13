@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatCurrency } from './utils';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useData } from './contexts/DataContext';
@@ -16,7 +17,21 @@ import { Agenda } from './components/Agenda';
 import { Admin } from './components/Admin';
 import { Settings } from './components/Settings';
 import { Metrics } from './components/Metrics';
-import { resetPassword } from './services/api';
+import { Production } from './components/Production';
+import { ProjectManagement } from './components/ProjectManagement';
+import { DAM } from './components/DAM';
+import { Inventory } from './components/Inventory';
+import { Marketing } from './components/Marketing';
+import { Quality } from './components/Quality';
+import { AfterSales } from './components/AfterSales';
+import { HRPerformance } from './components/HRPerformance';
+import { BITechnology } from './components/BITechnology';
+import { SOPs } from './components/SOPs';
+import { DashboardPhoto } from './components/DashboardPhoto';
+import { DashboardVideo } from './components/DashboardVideo';
+import { DashboardSocial } from './components/DashboardSocial';
+import { resetPassword, sendEmailNotification as queueEmailNotification } from './services/api';
+import { Page } from './types';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, loading } = useAuth();
@@ -32,20 +47,40 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
+const PermissionRoute: React.FC<{ children: React.ReactNode, module: string, action?: 'view' | 'create' | 'edit' | 'approve' }> = ({ children, module, action = 'view' }) => {
+  const { hasPermission, loading, isAdmin } = useAuth();
+
+  if (loading) {
+    return <div className="flex h-screen items-center justify-center">Carregando...</div>;
+  }
+
+  if (!isAdmin && !hasPermission(module, action)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 function AppContent() {
   const { signOut, currentUser, refreshUser } = useAuth();
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   const {
     leads, clients, financialData, reports, goals, calendarEvents, employees, teams, notifications, activities, loading: loadingData,
+    proposals, followUps,
     addLead, updateLeadData, removeLead, addLeadNote, addLeadTask, toggleLeadTask, addLeadFile, convertLeadToClient,
+    addProposal, updateProposalData, removeProposal, addFollowUp, removeFollowUp,
     addClient, updateClientData, removeClient, addInteraction, addClientTag, removeClientTag, createTag,
-    addTransaction, removeTransaction, toggleTransactionStatus, addBudget, updateBudget, deleteBudget, addTax, updateTax, deleteTax, payTax,
+    addFeedback, addComplaint, addUpsellOpportunity, addImportantDate,
+    addTransaction, removeTransaction, updateTransactionData, toggleTransactionStatus, addBudget, updateBudget, deleteBudget,
+    addInternalBudget, updateInternalBudget, deleteInternalBudget,
+    addTax, updateTax, deleteTax, payTax,
     addReport, updateReport,
     addGoal, updateGoal, deleteGoal, addGoalUpdate,
     addEvent, updateEvent, deleteEvent,
     addEmployee, updateEmployeeData, removeEmployee,
     addTeam, updateTeamData, removeTeam,
+    addProductionProject,
     addNotification, markNotificationRead, markAllNotificationsRead
   } = useData();
 
@@ -80,6 +115,17 @@ function AppContent() {
             const exists = notifications.some(n => n.title === 'Imposto a Vencer' && n.message.includes(tax.name) && new Date(n.date).toDateString() === today.toDateString());
             if (!exists) {
               await addNotification('Imposto a Vencer', `Imposto ${tax.name} vence em ${tax.dueDate}.`, 'alert');
+
+              if (tax.responsibleId) {
+                const responsible = employees.find(e => e.id === tax.responsibleId);
+                if (responsible && responsible.email) {
+                  await queueEmailNotification(
+                    responsible.email,
+                    `Lembrete de Imposto: ${tax.name}`,
+                    `Olá ${responsible.name},\n\nO imposto "${tax.name}" no valor de ${formatCurrency(tax.amount)} vence em ${new Date(tax.dueDate).toLocaleDateString('pt-BR')}.\n\nPor favor, providencie o pagamento.`
+                  );
+                }
+              }
             }
           }
         }
@@ -88,7 +134,7 @@ function AppContent() {
     if (financialData.taxRecords.length > 0) {
       checkDueTaxes();
     }
-  }, [financialData.taxRecords, notifications, addNotification]);
+  }, [financialData.taxRecords, notifications, addNotification, employees]);
 
   const handleResetPassword = async (email: string) => {
     try {
@@ -124,52 +170,76 @@ function AppContent() {
                 employees={employees}
               />
             } />
-            <Route path="/pipeline" element={
-              <Pipeline
-                leads={leads}
-                employees={employees}
-                activities={activities}
-                onUpdateLead={updateLeadData}
-                onAddLead={addLead}
-                onAddLeadNote={addLeadNote}
-                onAddLeadTask={addLeadTask}
-                onToggleLeadTask={toggleLeadTask}
-                onAddLeadFile={addLeadFile}
-                onConvertLeadToClient={convertLeadToClient}
-                onDeleteLead={removeLead}
-              />
+            <Route path="/crm" element={
+              <PermissionRoute module={Page.CRM}>
+                <Pipeline
+                  leads={leads}
+                  employees={employees}
+                  activities={activities}
+                  proposals={proposals}
+                  followUps={followUps}
+                  onUpdateLead={updateLeadData}
+                  onAddLead={addLead}
+                  onAddLeadNote={addLeadNote}
+                  onAddLeadTask={addLeadTask}
+                  onToggleLeadTask={toggleLeadTask}
+                  onAddLeadFile={addLeadFile}
+                  onConvertLeadToClient={convertLeadToClient}
+                  onDeleteLead={removeLead}
+                  onAddProposal={addProposal}
+                  onUpdateProposal={updateProposalData}
+                  onRemoveProposal={removeProposal}
+                  onAddFollowUp={addFollowUp}
+                  onRemoveFollowUp={removeFollowUp}
+                  currentUser={currentUser!}
+                />
+              </PermissionRoute>
             } />
             <Route path="/clients" element={
-              <Clients
-                clients={clients}
-                leads={leads}
-                transactions={financialData.transactions}
-                onAddInteraction={addInteraction}
-                onAddClient={addClient}
-                onUpdateClient={updateClientData}
-                onDeleteClient={removeClient}
-                onAddTag={addClientTag}
-                onRemoveTag={removeClientTag}
-                onCreateTag={createTag}
-              />
+              <PermissionRoute module={Page.Clients}>
+                <Clients
+                  clients={clients}
+                  leads={leads}
+                  transactions={financialData.transactions}
+                  onAddInteraction={addInteraction}
+                  onAddClient={addClient}
+                  onUpdateClient={updateClientData}
+                  onDeleteClient={removeClient}
+                  onAddTag={addClientTag}
+                  onRemoveTag={removeClientTag}
+                  onCreateTag={createTag}
+                  onAddFeedback={addFeedback}
+                  onAddComplaint={addComplaint}
+                  onAddUpsellOpportunity={addUpsellOpportunity}
+                  onAddImportantDate={addImportantDate}
+                  onAddProductionProject={addProductionProject}
+                />
+              </PermissionRoute>
             } />
             <Route path="/financial" element={
-              <Financial
-                financialData={financialData}
-                onAddTransaction={addTransaction}
-                onDeleteTransaction={removeTransaction}
-                onToggleTransaction={toggleTransactionStatus}
-                onAddBudget={addBudget}
-                onUpdateBudget={updateBudget}
-                onDeleteBudget={deleteBudget}
-                onAddTax={addTax}
-                onUpdateTax={updateTax}
-                onDeleteTax={deleteTax}
-                onPayTax={payTax}
-              />
+              <PermissionRoute module={Page.Financial}>
+                <Financial
+                  financialData={financialData}
+                  onAddTransaction={addTransaction}
+                  onUpdateTransaction={updateTransactionData}
+                  onDeleteTransaction={removeTransaction}
+                  onToggleTransaction={toggleTransactionStatus}
+                  onAddBudget={addBudget}
+                  onUpdateBudget={updateBudget}
+                  onDeleteBudget={deleteBudget}
+                  onAddTax={addTax}
+                  onUpdateTax={updateTax}
+                  onDeleteTax={deleteTax}
+                  onPayTax={payTax}
+                  onAddInternalBudget={addInternalBudget}
+                  onUpdateInternalBudget={updateInternalBudget}
+                  onDeleteInternalBudget={deleteInternalBudget}
+                  employees={employees}
+                />
+              </PermissionRoute>
             } />
-            <Route path="/metrics" element={<Metrics leads={leads} employees={employees} reports={reports} financialData={financialData} />} />
-            <Route path="/reports" element={<Reports reports={reports} employees={employees} currentUser={currentUser!} onAddReport={addReport} onUpdateReport={updateReport} leads={leads} events={calendarEvents} />} />
+            <Route path="/metrics" element={<PermissionRoute module={Page.BI}><Metrics leads={leads} employees={employees} reports={reports} financialData={financialData} /></PermissionRoute>} />
+            <Route path="/reports" element={<PermissionRoute module={Page.BI}><Reports reports={reports} employees={employees} currentUser={currentUser!} onAddReport={addReport} onUpdateReport={updateReport} leads={leads} events={calendarEvents} /></PermissionRoute>} />
             <Route path="/notifications" element={
               <Notifications
                 notifications={notifications}
@@ -178,21 +248,41 @@ function AppContent() {
                 currentUser={currentUser!}
               />
             } />
-            <Route path="/goals" element={<Goals goals={goals} employees={employees} onAddGoal={addGoal} onUpdateGoal={updateGoal} onDeleteGoal={deleteGoal} onAddGoalUpdate={addGoalUpdate} />} />
-            <Route path="/agenda" element={<Agenda events={calendarEvents} onAddEvent={addEvent} onUpdateEvent={updateEvent} onDeleteEvent={deleteEvent} employees={employees} />} />
+            <Route path="/goals" element={<PermissionRoute module={Page.HR}><Goals goals={goals} employees={employees} onAddGoal={addGoal} onUpdateGoal={updateGoal} onDeleteGoal={deleteGoal} onAddGoalUpdate={addGoalUpdate} /></PermissionRoute>} />
+            <Route path="/agenda" element={<PermissionRoute module={Page.Agenda}><Agenda events={calendarEvents} onAddEvent={addEvent} onUpdateEvent={updateEvent} onDeleteEvent={deleteEvent} employees={employees} /></PermissionRoute>} />
             <Route path="/admin" element={
-              <Admin
-                employees={employees}
-                teams={teams}
-                onAddEmployee={addEmployee}
-                onRemoveEmployee={removeEmployee}
-                onUpdateEmployee={updateEmployeeData}
-                onAddTeam={addTeam}
-                onUpdateTeam={updateTeamData}
-                onRemoveTeam={removeTeam}
-                onResetPassword={handleResetPassword}
-              />
-            } /><Route path="/settings" element={<Settings currentUser={currentUser!} onUpdateUser={updateEmployeeData} theme={theme} setTheme={setTheme} onResetPassword={handleResetPassword} employees={employees} onAddEmployee={addEmployee} onRemoveEmployee={removeEmployee} onUpdateEmployee={updateEmployeeData} />} />
+              <PermissionRoute module={Page.Admin}>
+                <Admin
+                  employees={employees}
+                  teams={teams}
+                  onAddEmployee={addEmployee}
+                  onRemoveEmployee={removeEmployee}
+                  onUpdateEmployee={updateEmployeeData}
+                  onAddTeam={addTeam}
+                  onUpdateTeam={updateTeamData}
+                  onRemoveTeam={removeTeam}
+                  onResetPassword={handleResetPassword}
+                />
+              </PermissionRoute>
+            } />
+            <Route path="/settings" element={<Settings currentUser={currentUser!} onUpdateUser={updateEmployeeData} theme={theme} setTheme={setTheme} onResetPassword={handleResetPassword} employees={employees} onAddEmployee={addEmployee} onRemoveEmployee={removeEmployee} onUpdateEmployee={updateEmployeeData} />} />
+
+            <Route path="/production" element={<PermissionRoute module={Page.Production}><Production /></PermissionRoute>} />
+            <Route path="/project-management" element={<PermissionRoute module={Page.ProjectManagement}><ProjectManagement /></PermissionRoute>} />
+            <Route path="/dam" element={<PermissionRoute module={Page.DAM}><DAM /></PermissionRoute>} />
+            <Route path="/inventory" element={<PermissionRoute module={Page.Inventory}><Inventory /></PermissionRoute>} />
+            <Route path="/after-sales" element={<PermissionRoute module={Page.AfterSales}><AfterSales /></PermissionRoute>} />
+            <Route path="/marketing" element={<PermissionRoute module={Page.Marketing}><Marketing /></PermissionRoute>} />
+            <Route path="/quality" element={<PermissionRoute module={Page.Quality}><Quality /></PermissionRoute>} />
+            <Route path="/bi" element={<PermissionRoute module={Page.BI}><BITechnology leads={leads} financialData={financialData} employees={employees} reports={reports} followUps={followUps} /></PermissionRoute>} />
+            <Route path="/sops" element={<PermissionRoute module={Page.SOPs}><SOPs /></PermissionRoute>} />
+            <Route path="/hr" element={<PermissionRoute module={Page.HR}><HRPerformance /></PermissionRoute>} />
+
+            {/* Specific Dashboards */}
+            <Route path="/dashboard-photo" element={<PermissionRoute module={Page.DashboardPhoto}><DashboardPhoto /></PermissionRoute>} />
+            <Route path="/dashboard-video" element={<PermissionRoute module={Page.DashboardVideo}><DashboardVideo /></PermissionRoute>} />
+            <Route path="/dashboard-social" element={<PermissionRoute module={Page.DashboardSocial}><DashboardSocial /></PermissionRoute>} />
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
@@ -201,10 +291,13 @@ function AppContent() {
   );
 }
 
+import { PublicDelivery } from './components/PublicDelivery';
+
 function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/delivery/:token" element={<PublicDelivery />} />
       <Route
         path="/*"
         element={

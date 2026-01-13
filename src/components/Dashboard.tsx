@@ -1,6 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card } from './common/Card';
+import { formatCurrency } from '../utils';
 import { LeadStatus, Lead, CalendarEvent, Activity, FinancialData, Notification, Employee } from '../types';
 import { AlertTriangleIcon, CheckCircleIcon, InfoIcon, CalendarIcon, TargetIcon, PipelineIcon, FinancialIcon } from './common/Icon';
 
@@ -36,9 +37,9 @@ const ActivityItem: React.FC<{ activity: Activity; employees: Employee[] }> = ({
  */
 export const Dashboard: React.FC<DashboardProps> = ({ leads, calendarEvents, financialData, notifications, activities, employees }) => {
     const newLeads = leads.filter(lead => lead.status === LeadStatus.New).length;
-    const closedLeads = leads.filter(lead => lead.status === LeadStatus.Closed).length;
+    const closedLeads = leads.filter(lead => lead.status === LeadStatus.Won).length;
     const totalLeads = leads.length;
-    const pipelineValue = leads.filter(l => l.status !== LeadStatus.Closed).reduce((sum, lead) => sum + lead.value, 0);
+    const pipelineValue = leads.filter(l => l.status !== LeadStatus.Won && l.status !== LeadStatus.Lost).reduce((sum, lead) => sum + lead.value, 0);
     const tasks = calendarEvents.filter(event => new Date(event.date) >= new Date()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     const pipelineSummary = Object.values(LeadStatus).map(status => ({
@@ -48,8 +49,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, calendarEvents, fin
 
     const chartData = financialData.labels.slice(0, 6).map((label, index) => ({
         name: label,
-        Receita: (financialData.revenue[index] || 0) * 1000,
-        Despesa: (financialData.expenses[index] || 0) * 1000,
+        Receita: financialData.revenue[index] || 0,
+        Despesa: financialData.expenses[index] || 0,
     }));
 
     const getNotificationIcon = (type: 'alert' | 'success' | 'info') => {
@@ -106,7 +107,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, calendarEvents, fin
                             <FinancialIcon className="w-8 h-8 text-brand-gold" />
                             <div>
                                 <p className="text-sm font-medium text-brand-secondary">Valor em Pipeline</p>
-                                <p className="text-3xl font-bold text-brand-dark dark:text-gray-100">Kz {(pipelineValue / 1000).toFixed(1)}k</p>
+                                <p className="text-3xl font-bold text-brand-dark dark:text-gray-100">{formatCurrency(pipelineValue)}</p>
                             </div>
                         </div>
                     </Card>
@@ -138,8 +139,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, calendarEvents, fin
                             <BarChart data={chartData}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="name" />
-                                <YAxis unit="k" />
-                                <Tooltip formatter={(value: number) => `Kz ${value.toLocaleString('pt-BR')}`} />
+                                <YAxis tickFormatter={(val) => formatCurrency(val)} />
+                                <Tooltip formatter={(value: number) => formatCurrency(value)} />
                                 <Bar dataKey="Receita" fill="#D4AF37" name="Receita" />
                                 <Bar dataKey="Despesa" fill="#4B5563" name="Despesa" />
                             </BarChart>

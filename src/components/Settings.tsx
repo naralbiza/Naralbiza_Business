@@ -1,21 +1,23 @@
+
 import React, { useState, useEffect } from 'react';
 import { Employee } from '../types';
 import { Card } from './common/Card';
 import { EmployeeModal } from './modals/EmployeeModal';
 import { PlusIcon } from './common/Icon';
+import { getRoles } from '../services/api';
 
 type Theme = 'light' | 'dark';
 
 interface SettingsProps {
   currentUser: Employee;
-  onUpdateUser: (user: Employee) => void;
+  onUpdateUser: (user: Employee) => Promise<void>;
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  onResetPassword?: (email: string) => void;
+  onResetPassword?: (email: string) => Promise<void>;
   employees?: Employee[];
-  onAddEmployee?: (employee: Omit<Employee, 'id' | 'avatarUrl' | 'notificationPreferences'>, password?: string, avatarFile?: File) => void;
-  onRemoveEmployee?: (employeeId: number) => void;
-  onUpdateEmployee?: (employee: Employee, avatarFile?: File) => void;
+  onAddEmployee?: (employee: Omit<Employee, 'id' | 'avatarUrl' | 'notificationPreferences'>, password?: string, avatarFile?: File) => Promise<void>;
+  onRemoveEmployee?: (employeeId: number) => Promise<void>;
+  onUpdateEmployee?: (employee: Employee, avatarFile?: File) => Promise<void>;
 }
 
 const ToggleSwitch: React.FC<{ checked: boolean; onChange: () => void }> = ({ checked, onChange }) => (
@@ -40,6 +42,7 @@ export const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser, t
     position: currentUser.position,
     notificationPreferences: currentUser.notificationPreferences || { emailOnNewLead: false, emailOnTaskDue: false }
   });
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   useEffect(() => {
     setFormState({
@@ -49,15 +52,23 @@ export const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser, t
     });
   }, [currentUser]);
 
-  const handleProfileSubmit = (e: React.FormEvent) => {
+  const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateUser({
-      ...currentUser,
-      name: formState.name,
-      position: formState.position,
-      notificationPreferences: formState.notificationPreferences,
-    });
-    alert('Configurações salvas com sucesso!');
+    setIsSavingProfile(true);
+    try {
+      await onUpdateUser({
+        ...currentUser,
+        name: formState.name,
+        position: formState.position,
+        notificationPreferences: formState.notificationPreferences,
+      });
+      alert('Configurações salvas com sucesso!');
+    } catch (error) {
+      console.error("Failed to update profile", error);
+      alert("Erro ao salvar perfil."); // Improved from just alert
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,19 +88,41 @@ export const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser, t
 
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
   const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
+  const [roles, setRoles] = useState<{ id: string, name: string }[]>([]);
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const data = await getRoles();
+        setRoles(data);
+      } catch (error) {
+        console.error("Error fetching roles:", error);
+      }
+    };
+    if (currentUser.isAdmin && employees) {
+      fetchRoles();
+    }
+  }, [currentUser, employees]);
+
 
   const handleOpenEmployeeModal = (employee: Employee | null = null) => {
     setEmployeeToEdit(employee);
     setIsEmployeeModalOpen(true);
   };
 
-  const handleSaveEmployee = (employeeData: Omit<Employee, 'id' | 'avatarUrl' | 'notificationPreferences'> | Employee, password?: string, avatarFile?: File) => {
+  const handleSaveEmployee = async (employeeData: Omit<Employee, 'id' | 'avatarUrl' | 'notificationPreferences'> | Employee, password?: string, avatarFile?: File) => {
     if ('id' in employeeData) {
-      onUpdateEmployee?.(employeeData, avatarFile);
+      await onUpdateEmployee?.(employeeData, avatarFile);
     } else {
-      onAddEmployee?.(employeeData, password, avatarFile);
+      await onAddEmployee?.(employeeData, password, avatarFile);
     }
   };
+
+  const handleRemoveEmployee = async (id: number) => {
+    if (window.confirm('Tem certeza que deseja remover este usuário?')) {
+      await onRemoveEmployee?.(id);
+    }
+  }
 
   return (
     <div className="p-8 space-y-8 max-w-4xl mx-auto">
@@ -107,6 +140,7 @@ export const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser, t
                   value={formState.name}
                   onChange={handleInputChange}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-gold focus:ring-brand-gold sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  disabled={isSavingProfile}
                 />
               </div>
               <div>
@@ -118,6 +152,7 @@ export const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser, t
                   value={formState.position}
                   onChange={handleInputChange}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-gold focus:ring-brand-gold sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  disabled={isSavingProfile}
                 />
               </div>
             </div>
@@ -139,9 +174,10 @@ export const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser, t
           <div className="text-right">
             <button
               type="submit"
-              className="px-6 py-3 rounded text-white bg-brand-dark hover:bg-black dark:bg-brand-gold dark:text-brand-dark dark:hover:bg-yellow-500 font-semibold"
+              disabled={isSavingProfile}
+              className="px-6 py-3 rounded text-white bg-brand-dark hover:bg-black dark:bg-brand-gold dark:text-brand-dark dark:hover:bg-yellow-500 font-semibold disabled:opacity-50"
             >
-              Salvar Alterações
+              {isSavingProfile ? 'Salvando...' : 'Salvar Alterações'}
             </button>
           </div>
         </div>
@@ -172,10 +208,6 @@ export const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser, t
           <button
             onClick={() => {
               if (window.confirm('Enviar email de redefinição de senha para ' + currentUser.email + '?')) {
-                // We need to pass a handler for this or import the api function.
-                // Since Settings receives props, let's assume we can pass a handler or just use the api directly if we change the component to use it.
-                // But to keep it clean, let's add onResetPassword to SettingsProps.
-                // For now, I'll just use the prop I'm about to add.
                 onResetPassword?.(currentUser.email);
               }
             }}
@@ -223,7 +255,7 @@ export const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser, t
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
                         <button onClick={() => handleOpenEmployeeModal(employee)} className="text-brand-gold hover:text-yellow-600">Editar</button>
-                        <button onClick={() => onRemoveEmployee?.(employee.id)} className="text-red-600 hover:text-red-900">Remover</button>
+                        <button onClick={() => handleRemoveEmployee(employee.id)} className="text-red-600 hover:text-red-900">Remover</button>
                       </td>
                     </tr>
                   ))}
@@ -234,7 +266,7 @@ export const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser, t
         </Card>
       )}
 
-      <EmployeeModal isOpen={isEmployeeModalOpen} onClose={() => setIsEmployeeModalOpen(false)} onSave={handleSaveEmployee} employeeToEdit={employeeToEdit} onResetPassword={onResetPassword} />
+      <EmployeeModal isOpen={isEmployeeModalOpen} onClose={() => setIsEmployeeModalOpen(false)} onSave={handleSaveEmployee} employeeToEdit={employeeToEdit} onResetPassword={onResetPassword} roles={roles} />
     </div>
   );
 };

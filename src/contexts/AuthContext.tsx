@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, createEmployee } from '../services/api';
-import { Employee } from '../types';
-import { mapEmployeeFromDB } from '../services/api';
-import { User } from '@supabase/supabase-js';
+import { supabase, insertUser, getPermissionsByRole, getPermissionsByUser, getRoles, createEmployee } from '../services/api';
+import { User, ModulePermission, Page } from '../types';
+import { mapUserFromDB } from '../services/api';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface AuthContextType {
-    currentUser: Employee | null;
+    currentUser: User | null;
     loading: boolean;
     isAdmin: boolean;
+    hasPermission: (module: string, action: 'view' | 'create' | 'edit' | 'approve') => boolean;
+    visibleModules: string[];
     signOut: () => Promise<void>;
     refreshUser: () => Promise<void>;
 }
@@ -15,16 +17,16 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [currentUser, setCurrentUser] = useState<Employee | null>(null);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const fetchUser = async (user: User) => {
+    const fetchUser = async (user: SupabaseUser) => {
         try {
             console.log('[AuthContext] Fetching user profile for:', user.id);
             const { data, error } = await supabase
-                .from('employees')
+                .from('users')
                 .select('*')
-                .eq('user_id', user.id)
+                .eq('id', user.id)
                 .single();
 
             if (error) {
@@ -39,9 +41,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     const newProfile = await createEmployee({
                         name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
                         email: user.email || '',
-                        position: 'Staff',
-                        role: 'Sales', // Default role
-                        isAdmin: false, // Default to false, manual promotion required
+                        role: 'Comercial', // Default role
+                        sector: 'Comercial', // Default sector
                         active: true
                     }, user.id);
 
@@ -59,7 +60,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
 
             console.log('[AuthContext] User profile found:', data);
-            return mapEmployeeFromDB(data);
+            const userProfile = mapUserFromDB(data);
+
+            // Fetch permissions: check for user-specific overrides first, then role defaults
+            try {
+                const userPermissions = await getPermissionsByUser(user.id);
+                if (userPermissions && userPermissions.length > 0) {
+                    userProfile.permissions = userPermissions;
+                } else {
+                    const roles = await getRoles();
+                    const role = roles.find(r => r.name === userProfile.role);
+                    if (role) {
+                        const rolePermissions = await getPermissionsByRole(role.id);
+                        userProfile.permissions = rolePermissions;
+                    }
+                }
+            } catch (permError) {
+                console.error('[AuthContext] Error fetching permissions, falling back to basic profile:', permError);
+                // Try to at least get role permissions if user-specific fail
+                try {
+                    const roles = await getRoles();
+                    const role = roles.find(r => r.name === userProfile.role);
+                    if (role) {
+                        const rolePermissions = await getPermissionsByRole(role.id);
+                        userProfile.permissions = rolePermissions;
+                    }
+                } catch (roleErr) {
+                    console.error('[AuthContext] Critical failure fetching role permissions:', roleErr);
+                }
+            }
+
+            return userProfile;
         } catch (error) {
             console.error('[AuthContext] Error in fetchUser:', error);
             return null;
@@ -126,13 +157,82 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCurrentUser(null);
     };
 
+    const hasPermission = (module: string, action: 'view' | 'create' | 'edit' | 'approve') => {
+        if (!currentUser) return false;
+        if (currentUser.role === 'Admin' || currentUser.role === 'CEO / Direção') return true;
+
+        const permission = currentUser.permissions?.find(p => p.module === module);
+        if (!permission) return false;
+
+        switch (action) {
+            case 'view': return permission.canView;
+            case 'create': return permission.canCreate;
+            case 'edit': return permission.canEdit;
+            case 'approve': return permission.canApprove;
+            default: return false;
+        }
+    };
+
+    const visibleModules = React.useMemo(() => {
+        if (!currentUser) return [];
+        if (currentUser.role === 'Admin' || currentUser.role === 'CEO / Direção') {
+            return Object.values(Page);
+        }
+        return currentUser.permissions?.filter(p => p.canView).map(p => p.module) || [];
+    }, [currentUser]);
+
     const value = {
         currentUser,
         loading,
-        isAdmin: currentUser?.isAdmin || false,
+        isAdmin: currentUser?.role === 'Admin' || currentUser?.role === 'CEO / Direção',
+        hasPermission,
+        visibleModules,
         signOut,
         refreshUser
     };
+
+    // Real-time permission syncing
+    useEffect(() => {
+        if (!currentUser || !currentUser.id) return;
+
+        console.log('[AuthContext] Setting up real-time permission syncing for user:', currentUser.id);
+
+        // Subscribe to changes in the permissions table
+        const channel = supabase
+            .channel(`public:permissions:user:${currentUser.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'permissions'
+                },
+                (payload) => {
+                    const changedPermission = payload.new as any;
+                    const oldPermission = payload.old as any;
+
+                    // Check if the change affects THIS user directly
+                    const isUserOverride = (changedPermission?.user_id === currentUser.id) || (oldPermission?.user_id === currentUser.id);
+
+                    // Or if it affects their role-based permissions
+                    // We need the role ID, but we can just check if it matches the current permissions cached
+                    const isRoleChange = currentUser.permissions?.some(p => p.id === (changedPermission?.id || oldPermission?.id));
+
+                    if (isUserOverride || isRoleChange) {
+                        console.log('[AuthContext] Relevant permission change detected, refreshing user profile...');
+                        refreshUser();
+                    }
+                }
+            )
+            .subscribe((status) => {
+                console.log('[AuthContext] Permission sync status:', status);
+            });
+
+        return () => {
+            console.log('[AuthContext] Cleaning up permission sync...');
+            supabase.removeChannel(channel);
+        };
+    }, [currentUser?.id, currentUser?.permissions]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
