@@ -411,15 +411,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const newLead = await createLead(lead);
             setLeads(prev => [newLead, ...prev]);
-            await addNotification('Sucesso', 'Lead criado.', 'success');
-        } catch (e) { console.error(e); }
+            await addNotification('Sucesso', 'Lead criado com sucesso.', 'success');
+        } catch (e) {
+            console.error(e);
+            await addNotification('Erro', 'Falha ao criar lead. Verifique sua conexão ou permissões.', 'alert');
+        }
     };
 
     const updateLeadData = async (lead: Lead) => {
         try {
             const updated = await updateLead(lead);
             setLeads(prev => prev.map(l => l.id === updated.id ? updated : l));
-        } catch (e) { console.error(e); }
+            await addNotification('Sucesso', 'Lead atualizado.', 'success');
+        } catch (e) {
+            console.error(e);
+            await addNotification('Erro', 'Falha ao atualizar lead.', 'alert');
+        }
     };
 
     const removeLead = async (id: string) => {
@@ -519,14 +526,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const newClient = await createClient(client);
             setClients(prev => [...prev, newClient]);
-        } catch (e) { console.error(e); }
+            await addNotification('Sucesso', 'Cliente adicionado com sucesso.', 'success');
+        } catch (e) {
+            console.error(e);
+            await addNotification('Erro', 'Falha ao adicionar cliente.', 'alert');
+        }
     };
 
     const updateClientData = async (client: Client) => {
         try {
             const updated = await updateClient(client);
             setClients(prev => prev.map(c => c.id === updated.id ? updated : c));
-        } catch (e) { console.error(e); }
+            await addNotification('Sucesso', 'Dados do cliente atualizados.', 'success');
+        } catch (e) {
+            console.error(e);
+            await addNotification('Erro', 'Falha ao atualizar dados do cliente.', 'alert');
+        }
     };
 
     const removeClient = async (id: string) => {
@@ -811,14 +826,26 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         catch (e) { console.error(e); }
     };
 
-    const addProductionProject = async (project: any) => {
-        try { const p = await createProductionProject(project); setProductionProjects(prev => [...prev, p]); }
-        catch (e) { console.error(e); }
+    const addProductionProject = async (project: Omit<ProductionProject, 'id'>) => {
+        try {
+            const newProject = await createProductionProject(project);
+            setProductionProjects(prev => [...prev, newProject]);
+            await addNotification('Sucesso', 'Projeto criado com sucesso.', 'success');
+        } catch (e) {
+            console.error(e);
+            await addNotification('Erro', 'Falha ao criar projeto.', 'alert');
+        }
     };
 
     const updateProductionProjectData = async (project: ProductionProject) => {
-        try { const updated = await updateProductionProject(project); setProductionProjects(prev => prev.map(p => p.id === updated.id ? updated : p)); }
-        catch (e) { console.error(e); }
+        try {
+            const updated = await updateProductionProject(project);
+            setProductionProjects(prev => prev.map(p => p.id === updated.id ? updated : p));
+            await addNotification('Sucesso', 'Projeto atualizado com sucesso.', 'success');
+        } catch (e) {
+            console.error(e);
+            await addNotification('Erro', 'Falha ao atualizar projeto.', 'alert');
+        }
     };
 
     const removeProductionProject = async (id: string) => {

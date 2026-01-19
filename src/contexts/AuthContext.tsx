@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const fetchUser = async (user: SupabaseUser) => {
         try {
-            console.log('[AuthContext] Fetching user profile for:', user.id);
+            console.log('[AuthContext] Fetching user profile for:', user.id, user.email);
             const { data, error } = await supabase
                 .from('users')
                 .select('*')
@@ -30,28 +30,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 .single();
 
             if (error) {
-                console.error('[AuthContext] Error fetching user profile:', error);
+                console.error('[AuthContext] Error fetching user profile:', error.message, error.code);
 
-                // Check if error is "PGRST116" (JSON object requested, multiple (or no) rows returned)
-                // The JS client might return a specific error object or code.
-                // If we are here, it likely means the profile doesn't exist.
+                // If profile doesn't exist, try to auto-create it
+                if (error.code === 'PGRST116') {
+                    console.log('[AuthContext] Profile not found. Attempting to auto-create for:', user.email);
+                    try {
+                        const newProfile = await createEmployee({
+                            name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+                            email: user.email || '',
+                            role: 'Comercial', // Default role
+                            sector: 'Comercial', // Default sector
+                            active: true
+                        }, user.id);
 
-                console.log('[AuthContext] Attempting to auto-create profile for orphan user...');
-                try {
-                    const newProfile = await createEmployee({
-                        name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-                        email: user.email || '',
-                        role: 'Comercial', // Default role
-                        sector: 'Comercial', // Default sector
-                        active: true
-                    }, user.id);
-
-                    console.log('[AuthContext] Auto-created profile:', newProfile);
-                    return newProfile;
-                } catch (createError) {
-                    console.error('[AuthContext] Failed to auto-create profile:', createError);
-                    return null;
+                        if (newProfile) {
+                            console.log('[AuthContext] Auto-created profile successfully:', newProfile.email);
+                            return newProfile;
+                        } else {
+                            console.error('[AuthContext] Profile auto-creation returned null');
+                            return null;
+                        }
+                    } catch (createError) {
+                        console.error('[AuthContext] Failed to auto-create profile:', createError);
+                        return null;
+                    }
                 }
+                return null;
             }
 
             if (!data) {
@@ -59,24 +64,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 return null;
             }
 
-            console.log('[AuthContext] User profile found:', data);
+            console.log('[AuthContext] User profile found for:', data.email, 'Role:', data.role);
             const userProfile = mapUserFromDB(data);
 
             // Fetch permissions: check for user-specific overrides first, then role defaults
             try {
+                console.log('[AuthContext] Fetching permissions for:', user.id);
                 const userPermissions = await getPermissionsByUser(user.id);
                 if (userPermissions && userPermissions.length > 0) {
+                    console.log('[AuthContext] Using user-specific permissions');
                     userProfile.permissions = userPermissions;
                 } else {
+                    console.log('[AuthContext] Fetching role permissions for:', userProfile.role);
                     const roles = await getRoles();
                     const role = roles.find(r => r.name === userProfile.role);
                     if (role) {
                         const rolePermissions = await getPermissionsByRole(role.id);
                         userProfile.permissions = rolePermissions;
+                        console.log('[AuthContext] Role permissions loaded:', rolePermissions.length);
+                    } else {
+                        console.warn('[AuthContext] Role not found for permissions:', userProfile.role);
                     }
                 }
             } catch (permError) {
-                console.error('[AuthContext] Error fetching permissions, falling back to basic profile:', permError);
+                console.error('[AuthContext] Error fetching permissions:', permError);
                 // Try to at least get role permissions if user-specific fail
                 try {
                     const roles = await getRoles();
@@ -92,19 +103,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             return userProfile;
         } catch (error) {
-            console.error('[AuthContext] Error in fetchUser:', error);
+            console.error('[AuthContext] UNEXPECTED error in fetchUser:', error);
             return null;
         }
     };
 
     const refreshUser = async () => {
-        console.log('[AuthContext] Refreshing user...');
+        console.log('[AuthContext] Refreshing user context...');
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
             const user = await fetchUser(session.user);
             setCurrentUser(user);
         } else {
-            console.log('[AuthContext] No session found during refresh.');
+            console.log('[AuthContext] No active session found during refresh.');
             setCurrentUser(null);
         }
     };
@@ -112,37 +123,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         const initAuth = async () => {
             setLoading(true);
-            console.log('[AuthContext] Initializing auth...');
-            const { data: { session } } = await supabase.auth.getSession();
+            console.log('[AuthContext] Initializing auth state...');
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
 
-            if (session?.user) {
-                console.log('[AuthContext] Session found:', session.user.id);
-                const user = await fetchUser(session.user);
-                if (user && user.active === false) {
-                    console.warn('[AuthContext] User is inactive. Signing out.');
-                    await signOut();
-                } else {
-                    setCurrentUser(user);
-                }
-            } else {
-                console.log('[AuthContext] No initial session.');
-                setCurrentUser(null);
-            }
-            setLoading(false);
-
-            const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-                console.log('[AuthContext] Auth state changed:', event);
                 if (session?.user) {
+                    console.log('[AuthContext] Session found for:', session.user.email);
                     const user = await fetchUser(session.user);
                     if (user && user.active === false) {
-                        console.warn('[AuthContext] User is inactive. Signing out.');
+                        console.warn('[AuthContext] User is inactive. Revoking session.');
                         await signOut();
                     } else {
+                        console.log('[AuthContext] Setting currentUser:', user?.email || 'EMPTY_PROFILE');
                         setCurrentUser(user);
                     }
                 } else {
+                    console.log('[AuthContext] No initial session found.');
                     setCurrentUser(null);
                 }
+            } catch (error) {
+                console.error('[AuthContext] Init auth error:', error);
+            } finally {
+                setLoading(false);
+            }
+
+            const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+                console.log('[AuthContext] Auth state event:', event);
+
+                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+                    if (session?.user) {
+                        const user = await fetchUser(session.user);
+                        if (user && user.active === false) {
+                            console.warn('[AuthContext] User became inactive. Signing out.');
+                            await signOut();
+                        } else {
+                            setCurrentUser(user);
+                        }
+                    }
+                } else if (event === 'SIGNED_OUT') {
+                    console.log('[AuthContext] User signed out');
+                    setCurrentUser(null);
+                }
+
                 setLoading(false);
             });
 
