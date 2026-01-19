@@ -122,13 +122,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         const initAuth = async () => {
-            setLoading(true);
             console.log('[AuthContext] Initializing auth state...');
+            setLoading(true);
             try {
                 const { data: { session } } = await supabase.auth.getSession();
 
                 if (session?.user) {
-                    console.log('[AuthContext] Session found for:', session.user.email);
+                    console.log('[AuthContext] Initial session found for:', session.user.email);
                     const user = await fetchUser(session.user);
                     if (user && user.active === false) {
                         console.warn('[AuthContext] User is inactive. Revoking session.');
@@ -152,6 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                 if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
                     if (session?.user) {
+                        setLoading(true);
                         const user = await fetchUser(session.user);
                         if (user && user.active === false) {
                             console.warn('[AuthContext] User became inactive. Signing out.');
@@ -159,13 +160,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         } else {
                             setCurrentUser(user);
                         }
+                        setLoading(false);
                     }
                 } else if (event === 'SIGNED_OUT') {
                     console.log('[AuthContext] User signed out');
                     setCurrentUser(null);
+                    setLoading(false);
+                } else {
+                    // Fallback for other events
+                    setLoading(false);
                 }
-
-                setLoading(false);
             });
 
             return () => subscription.unsubscribe();
