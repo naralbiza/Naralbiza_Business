@@ -2,14 +2,23 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { EyeIcon, EyeOffIcon } from '../components/common/Icon';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Login: React.FC = () => {
+    const { currentUser, loading: authLoading } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
+
+    // Redirect if already logged in
+    React.useEffect(() => {
+        if (currentUser && !authLoading) {
+            navigate('/');
+        }
+    }, [currentUser, authLoading, navigate]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();

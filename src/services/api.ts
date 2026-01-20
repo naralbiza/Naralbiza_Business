@@ -13,6 +13,7 @@ import {
     InternalBudget, ModulePermission
 } from '../types';
 import { withRetry } from '../utils/retry';
+export { withRetry };
 
 // --- Mappers ---
 // --- Mappers ---
@@ -806,7 +807,7 @@ export const createEmployee = async (employee: Omit<User, 'id' | 'avatarUrl' | '
             admission_date: employee.admissionDate,
             supervisor_id: employee.supervisorId
         };
-        const { data, error } = await supabase.from('users').insert(dbUser).select().single();
+        const { data, error } = await supabase.from('users').upsert(dbUser, { onConflict: 'id' }).select().single();
         if (error) throw error;
 
         const newUser = mapUserFromDB(data);

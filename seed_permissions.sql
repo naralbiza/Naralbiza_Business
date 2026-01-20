@@ -1,128 +1,109 @@
-DO $$
-DECLARE
-  r_admin UUID;
-  r_ceo UUID;
-  r_comercial UUID;
-  r_financeiro UUID;
-  r_rh UUID;
-  r_photo UUID;
-  r_video UUID;
-  r_social UUID;
-BEGIN
-    SELECT id INTO r_admin FROM public.roles WHERE name = 'Admin';
-    SELECT id INTO r_ceo FROM public.roles WHERE name = 'CEO / Direção';
-    SELECT id INTO r_comercial FROM public.roles WHERE name = 'Comercial';
-    SELECT id INTO r_financeiro FROM public.roles WHERE name = 'Financeiro';
-    SELECT id INTO r_rh FROM public.roles WHERE name = 'RH';
-    SELECT id INTO r_photo FROM public.roles WHERE name = 'Fotógrafo';
-    SELECT id INTO r_video FROM public.roles WHERE name = 'Videógrafo';
-    SELECT id INTO r_social FROM public.roles WHERE name = 'Social Media';
+-- Seed Permissions (Flat script to avoid DO block syntax issues)
 
-    -- CEO (Full Access like Admin)
-    IF r_ceo IS NOT NULL THEN
-        DELETE FROM public.permissions WHERE role_id = r_ceo;
-        INSERT INTO public.permissions (role_id, module, can_view, can_create, can_edit, can_approve)
-        VALUES 
-        (r_ceo, 'Dashboard Geral', true, true, true, true),
-        (r_ceo, 'CRM & Vendas', true, true, true, true),
-        (r_ceo, 'Clientes & Relacionamento', true, true, true, true),
-        (r_ceo, 'Produção', true, true, true, true),
-        (r_ceo, 'Gestão de Projectos', true, true, true, true),
-        (r_ceo, 'Activos Criativos (DAM)', true, true, true, true),
-        (r_ceo, 'Inventário & Equipamentos', true, true, true, true),
-        (r_ceo, 'Financeiro', true, true, true, true),
-        (r_ceo, 'RH & Performance', true, true, true, true),
-        (r_ceo, 'Marketing & Conteúdo', true, true, true, true),
-        (r_ceo, 'Qualidade & Aprovação', true, true, true, true),
-        (r_ceo, 'Pós-venda & Retenção', true, true, true, true),
-        (r_ceo, 'Relatórios & BI', true, true, true, true),
-        (r_ceo, 'Processos & SOPs', true, true, true, true),
-        (r_ceo, 'Configurações & Administração', true, true, true, true),
-        (r_ceo, '📸 Fotografia', true, true, true, true),
-        (r_ceo, '🎥 Vídeo', true, true, true, true),
-        (r_ceo, '📲 Social Media', true, true, true, true),
-        (r_ceo, 'Agenda', true, true, true, true),
-        (r_ceo, 'Notificações', true, true, true, true),
-        (r_ceo, 'Administração', true, true, true, true);
-    END IF;
+-- Cleanup existing permissions to avoid duplicates
+DELETE FROM public.permissions;
 
-    -- Comercial
-    IF r_comercial IS NOT NULL THEN
-        DELETE FROM public.permissions WHERE role_id = r_comercial;
-        INSERT INTO public.permissions (role_id, module, can_view, can_create, can_edit, can_approve)
-        VALUES 
-        (r_comercial, 'Dashboard Geral', true, false, false, false),
-        (r_comercial, 'CRM & Vendas', true, true, true, false),
-        (r_comercial, 'Clientes & Relacionamento', true, true, true, false),
-        (r_comercial, 'Agenda', true, true, true, false),
-        (r_comercial, 'Pós-venda & Retenção', true, true, true, false),
-        (r_comercial, 'Marketing & Conteúdo', true, false, false, false);
-    END IF;
+-- Admin (Full Access)
+INSERT INTO public.permissions (role_id, module, can_view, can_create, can_edit, can_approve)
+SELECT id, m, true, true, true, true 
+FROM public.roles, (VALUES 
+    ('Dashboard Geral'), ('CRM & Vendas'), ('Clientes & Relacionamento'), ('Produção'), 
+    ('Gestão de Projectos'), ('Activos Criativos (DAM)'), ('Inventário & Equipamentos'), 
+    ('Financeiro'), ('RH & Performance'), ('Marketing & Conteúdo'), ('Qualidade & Aprovação'), 
+    ('Pós-venda & Retenção'), ('Relatórios & BI'), ('Processos & SOPs'), 
+    ('Configurações & Administração'), ('📸 Fotografia'), ('🎥 Vídeo'), ('📲 Social Media'), 
+    ('Agenda'), ('Notificações'), ('Administração')
+) AS modules(m)
+WHERE name = 'Admin';
 
-    -- Financeiro
-    IF r_financeiro IS NOT NULL THEN
-        DELETE FROM public.permissions WHERE role_id = r_financeiro;
-        INSERT INTO public.permissions (role_id, module, can_view, can_create, can_edit, can_approve)
-        VALUES 
-        (r_financeiro, 'Dashboard Geral', true, false, false, false),
-        (r_financeiro, 'Financeiro', true, true, true, true),
-        (r_financeiro, 'Clientes & Relacionamento', true, false, false, false),
-        (r_financeiro, 'Agenda', true, true, true, false);
-    END IF;
+-- CEO (Full Access like Admin)
+INSERT INTO public.permissions (role_id, module, can_view, can_create, can_edit, can_approve)
+SELECT id, m, true, true, true, true 
+FROM public.roles, (VALUES 
+    ('Dashboard Geral'), ('CRM & Vendas'), ('Clientes & Relacionamento'), ('Produção'), 
+    ('Gestão de Projectos'), ('Activos Criativos (DAM)'), ('Inventário & Equipamentos'), 
+    ('Financeiro'), ('RH & Performance'), ('Marketing & Conteúdo'), ('Qualidade & Aprovação'), 
+    ('Pós-venda & Retenção'), ('Relatórios & BI'), ('Processos & SOPs'), 
+    ('Configurações & Administração'), ('📸 Fotografia'), ('🎥 Vídeo'), ('📲 Social Media'), 
+    ('Agenda'), ('Notificações'), ('Administração')
+) AS modules(m)
+WHERE name = 'CEO / Direção';
 
-    -- RH
-    IF r_rh IS NOT NULL THEN
-        DELETE FROM public.permissions WHERE role_id = r_rh;
-        INSERT INTO public.permissions (role_id, module, can_view, can_create, can_edit, can_approve)
-        VALUES 
-        (r_rh, 'Dashboard Geral', true, false, false, false),
-        (r_rh, 'RH & Performance', true, true, true, true),
-        (r_rh, 'Metas', true, true, true, true),
-        (r_rh, 'Processos & SOPs', true, true, true, false),
-        (r_rh, 'Agenda', true, true, true, false);
-    END IF;
+-- Comercial
+INSERT INTO public.permissions (role_id, module, can_view, can_create, can_edit, can_approve)
+SELECT id, m, v, c, e, a 
+FROM public.roles, (VALUES 
+    ('Dashboard Geral', true, false, false, false),
+    ('CRM & Vendas', true, true, true, false),
+    ('Clientes & Relacionamento', true, true, true, false),
+    ('Agenda', true, true, true, false),
+    ('Pós-venda & Retenção', true, true, true, false),
+    ('Marketing & Conteúdo', true, false, false, false)
+) AS modules(m, v, c, e, a)
+WHERE name = 'Comercial';
 
-    -- Creatives (Photographer)
-    IF r_photo IS NOT NULL THEN
-        DELETE FROM public.permissions WHERE role_id = r_photo;
-        INSERT INTO public.permissions (role_id, module, can_view, can_create, can_edit, can_approve)
-        VALUES 
-        (r_photo, 'Dashboard Geral', true, false, false, false),
-        (r_photo, '📸 Fotografia', true, true, true, false),
-        (r_photo, 'Produção', true, false, true, false),
-        (r_photo, 'Gestão de Projectos', true, false, true, false),
-        (r_photo, 'Activos Criativos (DAM)', true, true, true, false),
-        (r_photo, 'Inventário & Equipamentos', true, false, false, false),
-        (r_photo, 'Agenda', true, true, true, false),
-        (r_photo, 'Processos & SOPs', true, false, false, false);
-    END IF;
+-- Financeiro
+INSERT INTO public.permissions (role_id, module, can_view, can_create, can_edit, can_approve)
+SELECT id, m, v, c, e, a 
+FROM public.roles, (VALUES 
+    ('Dashboard Geral', true, false, false, false),
+    ('Financeiro', true, true, true, true),
+    ('Clientes & Relacionamento', true, false, false, false),
+    ('Agenda', true, true, true, false)
+) AS modules(m, v, c, e, a)
+WHERE name = 'Financeiro';
 
-    -- Creatives (Videographer)
-    IF r_video IS NOT NULL THEN
-        DELETE FROM public.permissions WHERE role_id = r_video;
-        INSERT INTO public.permissions (role_id, module, can_view, can_create, can_edit, can_approve)
-        VALUES 
-        (r_video, 'Dashboard Geral', true, false, false, false),
-        (r_video, '🎥 Vídeo', true, true, true, false),
-        (r_video, 'Produção', true, false, true, false),
-        (r_video, 'Gestão de Projectos', true, false, true, false),
-        (r_video, 'Activos Criativos (DAM)', true, true, true, false),
-        (r_video, 'Inventário & Equipamentos', true, false, false, false),
-        (r_video, 'Agenda', true, true, true, false),
-        (r_video, 'Processos & SOPs', true, false, false, false);
-    END IF;
+-- RH
+INSERT INTO public.permissions (role_id, module, can_view, can_create, can_edit, can_approve)
+SELECT id, m, v, c, e, a 
+FROM public.roles, (VALUES 
+    ('Dashboard Geral', true, false, false, false),
+    ('RH & Performance', true, true, true, true),
+    ('Metas', true, true, true, true),
+    ('Processos & SOPs', true, true, true, false),
+    ('Agenda', true, true, true, false)
+) AS modules(m, v, c, e, a)
+WHERE name = 'RH';
 
-    -- Social Media
-    IF r_social IS NOT NULL THEN
-        DELETE FROM public.permissions WHERE role_id = r_social;
-        INSERT INTO public.permissions (role_id, module, can_view, can_create, can_edit, can_approve)
-        VALUES 
-        (r_social, 'Dashboard Geral', true, false, false, false),
-        (r_social, '📲 Social Media', true, true, true, false),
-        (r_social, 'Marketing & Conteúdo', true, true, true, false),
-        (r_social, 'Activos Criativos (DAM)', true, true, true, false),
-        (r_social, 'Agenda', true, true, true, false),
-        (r_social, 'Processos & SOPs', true, false, false, false);
-    END IF;
+-- Creatives (Photographer)
+INSERT INTO public.permissions (role_id, module, can_view, can_create, can_edit, can_approve)
+SELECT id, m, v, c, e, a 
+FROM public.roles, (VALUES 
+    ('Dashboard Geral', true, false, false, false),
+    ('📸 Fotografia', true, true, true, false),
+    ('Produção', true, false, true, false),
+    ('Gestão de Projectos', true, false, true, false),
+    ('Activos Criativos (DAM)', true, true, true, false),
+    ('Inventário & Equipamentos', true, false, false, false),
+    ('Agenda', true, true, true, false),
+    ('Processos & SOPs', true, false, false, false)
+) AS modules(m, v, c, e, a)
+WHERE name = 'Fotógrafo';
 
-END $$;
+-- Creatives (Videographer)
+INSERT INTO public.permissions (role_id, module, can_view, can_create, can_edit, can_approve)
+SELECT id, m, v, c, e, a 
+FROM public.roles, (VALUES 
+    ('Dashboard Geral', true, false, false, false),
+    ('🎥 Vídeo', true, true, true, false),
+    ('Produção', true, false, true, false),
+    ('Gestão de Projectos', true, false, true, false),
+    ('Activos Criativos (DAM)', true, true, true, false),
+    ('Inventário & Equipamentos', true, false, false, false),
+    ('Agenda', true, true, true, false),
+    ('Processos & SOPs', true, false, false, false)
+) AS modules(m, v, c, e, a)
+WHERE name = 'Videógrafo';
+
+-- Social Media
+INSERT INTO public.permissions (role_id, module, can_view, can_create, can_edit, can_approve)
+SELECT id, m, v, c, e, a 
+FROM public.roles, (VALUES 
+    ('Dashboard Geral', true, false, false, false),
+    ('📲 Social Media', true, true, true, false),
+    ('Marketing & Conteúdo', true, true, true, false),
+    ('Activos Criativos (DAM)', true, true, true, false),
+    ('Agenda', true, true, true, false),
+    ('Processos & SOPs', true, false, false, false)
+) AS modules(m, v, c, e, a)
+WHERE name = 'Social Media';

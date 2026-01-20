@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, insertUser, getPermissionsByRole, getPermissionsByUser, getRoles, createEmployee } from '../services/api';
+import { supabase, insertUser, getPermissionsByRole, getPermissionsByUser, getRoles, createEmployee, withRetry } from '../services/api';
 import { User, ModulePermission, Page } from '../types';
 import { mapUserFromDB } from '../services/api';
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -21,91 +21,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
 
     const fetchUser = async (user: SupabaseUser) => {
-        try {
-            console.log('[AuthContext] Fetching user profile for:', user.id, user.email);
-            const { data, error } = await supabase
-                .from('users')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-
-            if (error) {
-                console.error('[AuthContext] Error fetching user profile:', error.message, error.code);
-
-                // If profile doesn't exist, try to auto-create it
-                if (error.code === 'PGRST116') {
-                    console.log('[AuthContext] Profile not found. Attempting to auto-create for:', user.email);
-                    try {
-                        const newProfile = await createEmployee({
-                            name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-                            email: user.email || '',
-                            role: 'Comercial', // Default role
-                            sector: 'Comercial', // Default sector
-                            active: true
-                        }, user.id);
-
-                        if (newProfile) {
-                            console.log('[AuthContext] Auto-created profile successfully:', newProfile.email);
-                            return newProfile;
-                        } else {
-                            console.error('[AuthContext] Profile auto-creation returned null');
-                            return null;
-                        }
-                    } catch (createError) {
-                        console.error('[AuthContext] Failed to auto-create profile:', createError);
-                        return null;
-                    }
-                }
-                return null;
-            }
-
-            if (!data) {
-                console.warn('[AuthContext] No profile found for user (data is null):', user.id);
-                return null;
-            }
-
-            console.log('[AuthContext] User profile found for:', data.email, 'Role:', data.role);
-            const userProfile = mapUserFromDB(data);
-
-            // Fetch permissions: check for user-specific overrides first, then role defaults
+        return withRetry(async () => {
             try {
-                console.log('[AuthContext] Fetching permissions for:', user.id);
-                const userPermissions = await getPermissionsByUser(user.id);
-                if (userPermissions && userPermissions.length > 0) {
-                    console.log('[AuthContext] Using user-specific permissions');
-                    userProfile.permissions = userPermissions;
-                } else {
-                    console.log('[AuthContext] Fetching role permissions for:', userProfile.role);
-                    const roles = await getRoles();
-                    const role = roles.find(r => r.name === userProfile.role);
-                    if (role) {
-                        const rolePermissions = await getPermissionsByRole(role.id);
-                        userProfile.permissions = rolePermissions;
-                        console.log('[AuthContext] Role permissions loaded:', rolePermissions.length);
-                    } else {
-                        console.warn('[AuthContext] Role not found for permissions:', userProfile.role);
-                    }
-                }
-            } catch (permError) {
-                console.error('[AuthContext] Error fetching permissions:', permError);
-                // Try to at least get role permissions if user-specific fail
-                try {
-                    const roles = await getRoles();
-                    const role = roles.find(r => r.name === userProfile.role);
-                    if (role) {
-                        const rolePermissions = await getPermissionsByRole(role.id);
-                        userProfile.permissions = rolePermissions;
-                    }
-                } catch (roleErr) {
-                    console.error('[AuthContext] Critical failure fetching role permissions:', roleErr);
-                }
-            }
+                console.log('[AuthContext] Fetching user profile for:', user.id, user.email);
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
 
-            return userProfile;
-        } catch (error) {
-            console.error('[AuthContext] UNEXPECTED error in fetchUser:', error);
-            return null;
-        }
+                if (error) {
+                    // Ignore "Row not found" errors initially as we might need to wait for the trigger
+                    if (error.code !== 'PGRST116') {
+                        console.error('[AuthContext] Error fetching user profile:', error.message, error.code);
+                        throw error;
+                    }
+                    // If PGRST116, it means the profile doesn't exist yet (trigger lag?) or user has no access.
+                    // The retryWrapper will handle retries.
+                }
+
+                if (!data) {
+                    throw new Error('No profile data found');
+                }
+
+                if (!data) {
+                    throw new Error('No profile data found');
+                }
+
+                console.log('[AuthContext] User profile found for:', data.email, 'Role:', data.role);
+                const userProfile = mapUserFromDB(data);
+
+                // Fetch permissions
+                try {
+                    const userPermissions = await getPermissionsByUser(user.id);
+                    if (userPermissions && userPermissions.length > 0) {
+                        userProfile.permissions = userPermissions;
+                    } else {
+                        const roles = await getRoles();
+                        const role = roles.find(r => r.name === userProfile.role);
+                        if (role) {
+                            const rolePermissions = await getPermissionsByRole(role.id);
+                            userProfile.permissions = rolePermissions;
+                        }
+                    }
+                } catch (permError) {
+                    console.error('[AuthContext] Error fetching permissions:', permError);
+                }
+
+                return userProfile;
+            } catch (error) {
+                console.error('[AuthContext] Error in fetchUser:', error);
+                throw error;
+            }
+        });
     };
 
     const refreshUser = async () => {
