@@ -17,9 +17,12 @@ export const MarketingMetricModal: React.FC<MarketingMetricModalProps> = ({
 }) => {
     const [formData, setFormData] = useState<Omit<MarketingMetric, 'id'>>({
         channel: 'Instagram',
-        investment: 0,
         leads: 0,
         reach: 0,
+        engagement: 0,
+        conversions: 0,
+        investment: 0,
+        spend: 0,
         date: new Date().toISOString().slice(0, 10),
         notes: ''
     });
@@ -31,17 +34,23 @@ export const MarketingMetricModal: React.FC<MarketingMetricModalProps> = ({
             setFormData({
                 channel: editingMetric.channel,
                 investment: editingMetric.investment,
+                spend: editingMetric.spend || editingMetric.investment,
                 leads: editingMetric.leads,
                 reach: editingMetric.reach,
+                engagement: editingMetric.engagement || 0,
+                conversions: editingMetric.conversions || 0,
                 date: editingMetric.date,
                 notes: editingMetric.notes || ''
             });
         } else {
             setFormData({
                 channel: 'Instagram',
-                investment: 0,
                 leads: 0,
                 reach: 0,
+                engagement: 0,
+                conversions: 0,
+                investment: 0,
+                spend: 0,
                 date: new Date().toISOString().slice(0, 10),
                 notes: ''
             });
@@ -68,13 +77,13 @@ export const MarketingMetricModal: React.FC<MarketingMetricModalProps> = ({
             title={editingMetric ? "Editar Métrica" : "Nova Métrica"}
         >
             <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Canal</label>
+                        <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Canal</label>
                         <select
                             value={formData.channel}
                             onChange={(e) => setFormData({ ...formData, channel: e.target.value })}
-                            className="w-full bg-brand-dark border border-gray-800 rounded-xl px-4 py-3 text-white focus:border-brand-gold outline-none transition-colors"
+                            className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300"
                             required
                         >
                             <option value="Instagram">Instagram</option>
@@ -86,77 +95,100 @@ export const MarketingMetricModal: React.FC<MarketingMetricModalProps> = ({
                         </select>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Data (Mês/Ano)</label>
+                        <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Data (Mês/Ano)</label>
                         <input
                             type="date"
                             value={formData.date}
                             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                            className="w-full bg-brand-dark border border-gray-800 rounded-xl px-4 py-3 text-white focus:border-brand-gold outline-none transition-colors"
+                            className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300"
                             required
                         />
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Investimento (AOA)</label>
+                        <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Investimento (AOA)</label>
                         <input
                             type="number"
                             value={formData.investment}
                             onChange={(e) => setFormData({ ...formData, investment: parseFloat(e.target.value) })}
-                            className="w-full bg-brand-dark border border-gray-800 rounded-xl px-4 py-3 text-white focus:border-brand-gold outline-none transition-colors"
+                            className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300"
                             step="0.01"
                             min="0"
                             required
                         />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Leads</label>
+                        <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Leads</label>
                         <input
                             type="number"
                             value={formData.leads}
                             onChange={(e) => setFormData({ ...formData, leads: parseInt(e.target.value) })}
-                            className="w-full bg-brand-dark border border-gray-800 rounded-xl px-4 py-3 text-white focus:border-brand-gold outline-none transition-colors"
+                            className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300"
                             min="0"
                             required
                         />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Alcance</label>
+                        <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Alcance</label>
                         <input
                             type="number"
                             value={formData.reach}
                             onChange={(e) => setFormData({ ...formData, reach: parseInt(e.target.value) })}
-                            className="w-full bg-brand-dark border border-gray-800 rounded-xl px-4 py-3 text-white focus:border-brand-gold outline-none transition-colors"
+                            className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300"
+                            min="0"
+                        />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Engajamento</label>
+                        <input
+                            type="number"
+                            value={formData.engagement}
+                            onChange={(e) => setFormData({ ...formData, engagement: parseInt(e.target.value) })}
+                            className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300"
+                            min="0"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Conversões</label>
+                        <input
+                            type="number"
+                            value={formData.conversions}
+                            onChange={(e) => setFormData({ ...formData, conversions: parseInt(e.target.value) })}
+                            className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300"
                             min="0"
                         />
                     </div>
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Observações</label>
+                    <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Observações</label>
                     <textarea
                         value={formData.notes}
                         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                        className="w-full bg-brand-dark border border-gray-800 rounded-xl px-4 py-3 text-white focus:border-brand-gold outline-none transition-colors min-h-[100px]"
+                        className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300 min-h-[120px]"
                         placeholder="Detalhes sobre a campanha ou performance..."
                     />
                 </div>
 
-                <div className="flex gap-4 pt-4">
+                <div className="flex gap-4 pt-6 mt-4 border-t border-black/5">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex-1 px-6 py-3 rounded-xl font-bold text-gray-400 hover:text-white transition-colors border border-gray-800 hover:bg-white/5"
+                        className="flex-1 px-6 py-4 rounded-xl font-black uppercase text-black/40 hover:text-black hover:bg-black/5 transition-all text-xs tracking-widest"
                     >
                         Cancelar
                     </button>
                     <button
                         type="submit"
                         disabled={loading}
-                        className="flex-1 bg-brand-gold hover:bg-white text-brand-dark px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg shadow-brand-gold/20 disabled:opacity-50"
+                        className="flex-1 bg-black hover:bg-gold-metallic hover:text-black text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs transition-all duration-300 shadow-lg hover:shadow-brand-gold/20 disabled:opacity-50"
                     >
-                        {loading ? "Salvando..." : editingMetric ? "Atualizar" : "Salvar Métrica"}
+                        {loading ? "Salvando..." : editingMetric ? "Atualizar Métrica" : "Salvar Métrica"}
                     </button>
                 </div>
             </form>

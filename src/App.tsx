@@ -32,12 +32,13 @@ import { DashboardVideo } from './components/DashboardVideo';
 import { DashboardSocial } from './components/DashboardSocial';
 import { resetPassword, sendEmailNotification as queueEmailNotification } from './services/api';
 import { Page } from './types';
+import { SkeletonLoader } from './components/SkeletonLoader';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, loading } = useAuth();
 
   if (loading) {
-    return <div className="flex h-screen items-center justify-center">Carregando...</div>;
+    return <SkeletonLoader />;
   }
 
   if (!currentUser) {
@@ -51,7 +52,7 @@ const PermissionRoute: React.FC<{ children: React.ReactNode, module: string, act
   const { hasPermission, loading, isAdmin } = useAuth();
 
   if (loading) {
-    return <div className="flex h-screen items-center justify-center">Carregando...</div>;
+    return <SkeletonLoader />;
   }
 
   if (!isAdmin && !hasPermission(module, action)) {
@@ -147,16 +148,16 @@ function AppContent() {
   };
 
   if (loadingData) {
-    return <div className="flex h-screen items-center justify-center">Carregando dados...</div>;
+    return <SkeletonLoader />;
   }
 
   return (
-    <div className={`flex h-screen bg-brand-light dark:bg-gray-900 font-sans`}>
+    <div className={`flex h-screen bg-brand-light dark:bg-black font-sans overflow-x-hidden`}>
       <Sidebar
         notificationCount={unreadNotifications}
         currentUser={currentUser!} // Safe because of ProtectedRoute
       />
-      <main className="flex-1 flex flex-col ml-64">
+      <main className="flex-1 flex flex-col ml-72 min-w-0">
         <Header currentUser={currentUser!} leads={leads} clients={clients} />
         <div className="flex-1 overflow-y-auto">
           <Routes>

@@ -23,8 +23,9 @@ export const EditorialContentModal: React.FC<EditorialContentModalProps> = ({
         platform: 'Instagram',
         publishDate: new Date().toISOString().slice(0, 10),
         status: 'Planned',
-        responsibleId: 0,
-        notes: ''
+        responsibleId: employees.length > 0 ? employees[0].id : '',
+        content: '',
+        visualBrief: ''
     });
 
     const [loading, setLoading] = useState(false);
@@ -38,7 +39,8 @@ export const EditorialContentModal: React.FC<EditorialContentModalProps> = ({
                 publishDate: editingContent.publishDate,
                 status: editingContent.status,
                 responsibleId: editingContent.responsibleId,
-                notes: editingContent.notes || ''
+                content: editingContent.content || '',
+                visualBrief: editingContent.visualBrief || ''
             });
         } else {
             setFormData({
@@ -47,8 +49,9 @@ export const EditorialContentModal: React.FC<EditorialContentModalProps> = ({
                 platform: 'Instagram',
                 publishDate: new Date().toISOString().slice(0, 10),
                 status: 'Planned',
-                responsibleId: employees.length > 0 ? employees[0].id : 0,
-                notes: ''
+                responsibleId: employees.length > 0 ? employees[0].id : '',
+                content: '',
+                visualBrief: ''
             });
         }
     }, [editingContent, isOpen, employees]);
@@ -74,24 +77,24 @@ export const EditorialContentModal: React.FC<EditorialContentModalProps> = ({
         >
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Título do Conteúdo</label>
+                    <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Título do Conteúdo</label>
                     <input
                         type="text"
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className="w-full bg-brand-dark border border-gray-800 rounded-xl px-4 py-3 text-white focus:border-brand-gold outline-none transition-colors"
+                        className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300 placeholder:text-black/30"
                         placeholder="Ex: Teaser do Evento Corporativo X"
                         required
                     />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Formato</label>
+                        <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Formato</label>
                         <select
                             value={formData.format}
                             onChange={(e) => setFormData({ ...formData, format: e.target.value as any })}
-                            className="w-full bg-brand-dark border border-gray-800 rounded-xl px-4 py-3 text-white focus:border-brand-gold outline-none transition-colors"
+                            className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300"
                             required
                         >
                             <option value="Video">Vídeo</option>
@@ -102,11 +105,11 @@ export const EditorialContentModal: React.FC<EditorialContentModalProps> = ({
                         </select>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Plataforma</label>
+                        <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Plataforma</label>
                         <select
                             value={formData.platform}
                             onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
-                            className="w-full bg-brand-dark border border-gray-800 rounded-xl px-4 py-3 text-white focus:border-brand-gold outline-none transition-colors"
+                            className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300"
                             required
                         >
                             <option value="Instagram">Instagram</option>
@@ -119,23 +122,23 @@ export const EditorialContentModal: React.FC<EditorialContentModalProps> = ({
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Data de Publicação</label>
+                        <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Data de Publicação</label>
                         <input
                             type="date"
                             value={formData.publishDate}
                             onChange={(e) => setFormData({ ...formData, publishDate: e.target.value })}
-                            className="w-full bg-brand-dark border border-gray-800 rounded-xl px-4 py-3 text-white focus:border-brand-gold outline-none transition-colors"
+                            className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300"
                             required
                         />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Responsável</label>
+                        <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Responsável</label>
                         <select
                             value={formData.responsibleId}
-                            onChange={(e) => setFormData({ ...formData, responsibleId: parseInt(e.target.value) })}
-                            className="w-full bg-brand-dark border border-gray-800 rounded-xl px-4 py-3 text-white focus:border-brand-gold outline-none transition-colors"
+                            onChange={(e) => setFormData({ ...formData, responsibleId: e.target.value })}
+                            className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300"
                             required
                         >
                             {employees.map(emp => (
@@ -146,11 +149,11 @@ export const EditorialContentModal: React.FC<EditorialContentModalProps> = ({
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Status</label>
+                    <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Status</label>
                     <select
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                        className="w-full bg-brand-dark border border-gray-800 rounded-xl px-4 py-3 text-white focus:border-brand-gold outline-none transition-colors"
+                        className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300"
                         required
                     >
                         <option value="Draft">Rascunho</option>
@@ -162,29 +165,39 @@ export const EditorialContentModal: React.FC<EditorialContentModalProps> = ({
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Notas de Produção</label>
+                    <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Conteúdo / Detalhes</label>
                     <textarea
-                        value={formData.notes}
-                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                        className="w-full bg-brand-dark border border-gray-800 rounded-xl px-4 py-3 text-white focus:border-brand-gold outline-none transition-colors min-h-[80px]"
+                        value={formData.content}
+                        onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                        className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300 min-h-[100px] placeholder:text-black/30"
                         placeholder="Scripts, legendas, referências..."
                     />
                 </div>
 
-                <div className="flex gap-4 pt-4">
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Briefing Visual / Referências</label>
+                    <textarea
+                        value={formData.visualBrief || ''}
+                        onChange={(e) => setFormData({ ...formData, visualBrief: e.target.value })}
+                        className="w-full bg-white border-2 border-black/5 rounded-2xl px-5 py-4 text-black font-bold focus:border-brand-gold outline-none transition-all duration-300 min-h-[80px] placeholder:text-black/30"
+                        placeholder="Estilo visual, referências de imagem/vídeo..."
+                    />
+                </div>
+
+                <div className="flex gap-4 pt-6 mt-4 border-t border-black/5">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex-1 px-6 py-3 rounded-xl font-bold text-gray-400 hover:text-white transition-colors border border-gray-800 hover:bg-white/5"
+                        className="flex-1 px-6 py-4 rounded-xl font-black uppercase text-black/40 hover:text-black hover:bg-black/5 transition-all text-xs tracking-widest"
                     >
                         Cancelar
                     </button>
                     <button
                         type="submit"
                         disabled={loading}
-                        className="flex-1 bg-brand-gold hover:bg-white text-brand-dark px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg shadow-brand-gold/20 disabled:opacity-50"
+                        className="flex-1 bg-black hover:bg-gold-metallic hover:text-black text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs transition-all duration-300 shadow-lg hover:shadow-brand-gold/20 disabled:opacity-50"
                     >
-                        {loading ? "Salvando..." : editingContent ? "Atualizar" : "Agendar Conteúdo"}
+                        {loading ? "Salvando..." : editingContent ? "Atualizar Conteúdo" : "Agendar Conteúdo"}
                     </button>
                 </div>
             </form>

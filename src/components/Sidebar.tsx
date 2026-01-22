@@ -95,8 +95,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ notificationCount, currentUser
   };
 
   return (
-    <aside className="w-72 bg-brand-dark text-white flex flex-col fixed h-full overflow-y-auto no-scrollbar">
-      <div className="h-24 flex flex-col items-center justify-center border-b border-gray-800 bg-brand-dark sticky top-0 z-10 p-4">
+    <aside className="w-72 bg-brand-dark text-white flex flex-col fixed h-full overflow-y-auto no-scrollbar border-r border-brand-gold/20">
+      <div className="h-24 flex flex-col items-center justify-center border-b border-brand-gold/20 bg-brand-dark sticky top-0 z-10 p-4">
         <h1 className="text-2xl font-black tracking-widest text-white">NARALBIZA</h1>
         <p className="text-[10px] text-brand-gold font-bold tracking-[0.2em] uppercase mt-1">Business Management</p>
       </div>
@@ -118,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ notificationCount, currentUser
             <div key={group.title} className="space-y-2">
               <button
                 onClick={() => toggleGroup(group.title)}
-                className="w-full flex items-center justify-between text-[11px] font-bold text-gray-500 tracking-[0.15em] uppercase px-2 hover:text-gray-300 transition-colors"
+                className="w-full flex items-center justify-between text-[11px] font-bold text-white/40 tracking-[0.15em] uppercase px-2 hover:text-brand-gold transition-colors"
               >
                 <span>{group.title}</span>
                 {isExpanded ? <ChevronDownIcon className="w-3 h-3" /> : <ChevronRightIcon className="w-3 h-3" />}
@@ -135,8 +135,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ notificationCount, currentUser
                         <Link
                           to={item.path}
                           className={`group flex items-center px-3 py-2.5 rounded-lg transition-all duration-300 ${isActive
-                            ? 'bg-brand-gold text-brand-dark shadow-lg shadow-brand-gold/20 font-bold scale-[1.02]'
-                            : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                            ? 'bg-gold-metallic shadow-lg shadow-brand-gold/40 font-black scale-[1.02]'
+                            : 'text-white/60 hover:bg-white/5 hover:text-white'
                             }`}
                         >
                           {Icon && (
@@ -162,16 +162,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ notificationCount, currentUser
         })}
       </nav>
 
-      <div className="p-6 border-t border-gray-800 bg-brand-dark/50 backdrop-blur-sm">
+      <div className="p-6 border-t border-brand-gold/20 bg-black">
         <div className="flex items-center mb-6 px-2">
           <img
             src={currentUser?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.name || 'User')}&background=B8860B&color=fff`}
             alt={currentUser?.name}
-            className="w-10 h-10 rounded-full border-2 border-brand-gold/30 mr-3"
+            className="w-10 h-10 rounded-full border-2 border-brand-gold/50 mr-3"
           />
           <div className="overflow-hidden">
-            <p className="text-sm font-bold truncate">{currentUser?.name}</p>
-            <p className="text-[10px] text-gray-500 truncate uppercase tracking-wider">{currentUser?.role}</p>
+            <p className="text-sm font-bold truncate text-white">{currentUser?.name}</p>
+            <p className="text-[10px] text-white/50 truncate uppercase tracking-wider">{currentUser?.role}</p>
           </div>
         </div>
 
@@ -181,7 +181,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ notificationCount, currentUser
         >
           <span>Sair do Sistema</span>
         </button>
-        <p className="text-center text-[9px] text-gray-600 mt-6 font-medium tracking-widest uppercase">&copy; 2025 NARALBIZA STUDIOS</p>
+        <p className="text-center text-[9px] text-white/40 mt-6 font-medium tracking-widest uppercase">&copy; 2025 NARALBIZA STUDIOS</p>
       </div>
     </aside>
   );

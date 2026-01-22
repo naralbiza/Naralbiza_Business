@@ -221,7 +221,7 @@ export interface Transaction {
   dueDate?: string;
   issueDate?: string; // Data de emissão
   paymentDate?: string; // Data do pagamento
-  projectId?: string;
+  projectId?: number;
   paymentMethod?: string;
   notes?: string;
   responsibleId?: string; // Quem lançou ou responsável

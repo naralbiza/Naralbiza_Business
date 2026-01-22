@@ -33,7 +33,8 @@ const TransactionModal: React.FC<{
             dueDate: new Date().toISOString().split('T')[0],
             paymentMethod: 'Transferência Bancária',
             notes: '',
-            responsibleId: ''
+            responsibleId: undefined,
+            projectId: undefined
         }
     );
 
@@ -54,7 +55,7 @@ const TransactionModal: React.FC<{
                 dueDate: new Date().toISOString().split('T')[0],
                 paymentMethod: 'Transferência Bancária',
                 notes: '',
-                responsibleId: ''
+                responsibleId: undefined
             });
         }
     }, [transactionToEdit, isOpen]);
@@ -535,7 +536,7 @@ interface FinancialProps {
     onPayTax?: (tax: Tax) => void;
     onAddInternalBudget?: (budget: Omit<InternalBudget, 'id'>) => void;
     onUpdateInternalBudget?: (budget: InternalBudget) => void;
-    onDeleteInternalBudget?: (id: string) => void;
+    onDeleteInternalBudget?: (id: number) => void;
     employees?: Employee[];
 }
 

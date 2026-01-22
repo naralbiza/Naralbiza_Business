@@ -405,9 +405,9 @@ export const mapTransactionToDB = (t: Partial<Transaction>) => ({
     due_date: t.dueDate,
     issue_date: t.issueDate,
     payment_date: t.paymentDate,
-    project_id: t.projectId,
+    project_id: t.projectId ? parseInt(String(t.projectId)) || null : null,
     payment_method: t.paymentMethod,
-    responsible_id: t.responsibleId,
+    responsible_id: t.responsibleId || null,
     notes: t.notes
 });
 
@@ -426,7 +426,7 @@ export const mapTaxToDB = (t: Partial<Tax>) => ({
     amount: t.amount,
     due_date: t.dueDate,
     status: t.status,
-    responsible_id: t.responsibleId,
+    responsible_id: t.responsibleId || null,
     notes: t.notes
 });
 
@@ -448,8 +448,8 @@ export const mapBudgetFromDB = (b: any): Budget => ({
 });
 
 export const mapBudgetToDB = (b: Partial<Budget>) => ({
-    client_id: b.clientId,
-    project_id: b.projectId,
+    client_id: b.clientId ? parseInt(String(b.clientId)) || null : null,
+    project_id: b.projectId ? parseInt(String(b.projectId)) || null : null,
     title: b.title,
     date: b.date,
     validity: b.validity,
@@ -585,7 +585,8 @@ export const mapSOPToDB = (s: Partial<SOP>) => ({
     content: s.content,
     author_id: s.authorId,
     version: s.version,
-    tags: s.tags
+    tags: s.tags,
+    updated_at: s.updatedAt || new Date().toISOString()
 });
 
 export const mapMarketingMetricFromDB = (m: any): MarketingMetric => ({
@@ -604,15 +605,14 @@ export const mapMarketingMetricFromDB = (m: any): MarketingMetric => ({
 
 export const mapMarketingMetricToDB = (m: Partial<MarketingMetric>) => ({
     date: m.date,
-    channel: m.channel || m.platform,
-    platform: m.platform || m.channel,
-    reach: m.reach,
-    engagement: m.engagement,
-    leads: m.leads || m.conversions,
-    conversions: m.conversions || m.leads,
-    investment: m.investment || m.spend,
-    spend: m.spend || m.investment,
-    notes: m.notes
+    channel: m.channel,
+    platform: m.platform || m.channel, // Ensure platform is set
+    reach: m.reach || 0,
+    engagement: m.engagement || 0,
+    leads: m.leads || 0,
+    conversions: m.conversions || 0,
+    spend: m.spend || m.investment || 0, // Map to DB column 'spend'
+    notes: m.notes || ''
 });
 
 export const mapEditorialContentFromDB = (e: any): EditorialContent => ({
@@ -632,14 +632,14 @@ export const mapEditorialContentFromDB = (e: any): EditorialContent => ({
 export const mapEditorialContentToDB = (e: Partial<EditorialContent>) => ({
     title: e.title,
     platform: e.platform,
-    type: e.type || e.format,
-    format: e.format || e.type,
+    type: e.type || e.format || 'Article', // Required field
+    format: e.format || e.type || 'Article',
     status: e.status,
     publish_date: e.publishDate,
     author_id: e.authorId,
-    responsible_id: e.responsibleId || e.authorId,
-    content: e.content,
-    visual_brief: e.visualBrief
+    responsible_id: e.responsibleId,
+    content: e.content || '',
+    visual_brief: e.visualBrief || ''
 });
 
 export const mapReportFromDB = (r: any): Report => ({
@@ -1488,7 +1488,7 @@ export const updateBudget = async (budget: Budget) => {
     });
 };
 
-export const deleteBudget = async (id: number | string) => {
+export const deleteBudget = async (id: string) => {
     return withRetry(async () => {
         const { error } = await supabase.from('budgets').delete().eq('id', id);
         if (error) throw error;
@@ -1520,7 +1520,7 @@ export const updateInternalBudget = async (budget: InternalBudget) => {
     });
 };
 
-export const deleteInternalBudget = async (id: string) => {
+export const deleteInternalBudget = async (id: number) => {
     return withRetry(async () => {
         const { error } = await supabase.from('internal_budgets').delete().eq('id', id);
         if (error) throw error;

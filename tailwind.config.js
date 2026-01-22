@@ -8,10 +8,9 @@ export default {
     theme: {
         extend: {
             colors: {
-                'brand-gold': '#D4AF37',
-                'brand-dark': '#111827',
-                'brand-light': '#F9FAFB',
-                'brand-secondary': '#4B5563',
+                'brand-gold': '#C5A059',
+                'brand-dark': '#000000',
+                'brand-light': '#FFFFFF',
             },
         },
     },

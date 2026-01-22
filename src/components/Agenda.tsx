@@ -86,7 +86,7 @@ const EventModal: React.FC<{
 
         const eventData: any = {
             ...formState,
-            responsibleId: formState.responsibleId ? Number(formState.responsibleId) : undefined,
+            responsibleId: formState.responsibleId || undefined,
             // Convert to ISO strings for API
             startDate: start.toISOString(),
             endDate: end.toISOString()

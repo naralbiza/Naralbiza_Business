@@ -128,6 +128,7 @@ interface DataContextType {
     removeImportantDate: (id: string) => Promise<void>;
 
     addMarketingMetric: (metric: Omit<MarketingMetric, 'id'>) => Promise<void>;
+    updateMarketingMetricData: (metric: MarketingMetric) => Promise<void>;
     removeMarketingMetric: (id: string) => Promise<void>;
     addEditorialContent: (content: Omit<EditorialContent, 'id'>) => Promise<void>;
     updateEditorialContentData: (content: EditorialContent) => Promise<void>;
@@ -674,6 +675,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         catch (e) { console.error(e); }
     };
 
+    const updateMarketingMetricData = async (metric: MarketingMetric) => {
+        try {
+            const updated = await updateMarketingMetric(metric);
+            setMarketingMetrics(prev => prev.map(m => m.id === updated.id ? updated : m));
+        } catch (e) { console.error(e); }
+    };
+
     const addEditorialContent = async (content: any) => {
         try { const c = await createEditorialContent(content); setEditorialContent(prev => [...prev, c]); }
         catch (e) { console.error(e); }
@@ -691,52 +699,52 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const addTransaction = async (tx: any) => {
         try { const t = await createTransaction(tx); setTransactions(prev => [t, ...prev]); }
-        catch (e) { console.error(e); }
+        catch (e) { console.error(e); throw e; }
     };
 
     const updateTransactionDataAction = async (tx: Transaction) => {
         try { const updated = await updateTransaction(tx); setTransactions(prev => prev.map(t => t.id === updated.id ? updated : t)); }
-        catch (e) { console.error(e); }
+        catch (e) { console.error(e); throw e; }
     };
 
     const removeTransaction = async (id: number) => {
         try { await deleteTransaction(id); setTransactions(prev => prev.filter(t => t.id !== id)); }
-        catch (e) { console.error(e); }
+        catch (e) { console.error(e); throw e; }
     };
 
     const toggleTransactionStatus = async (tx: Transaction) => {
         try { const updated = await updateTransaction({ ...tx, status: tx.status === 'Paid' ? 'Pending' : 'Paid' }); setTransactions(prev => prev.map(t => t.id === updated.id ? updated : t)); }
-        catch (e) { console.error(e); }
+        catch (e) { console.error(e); throw e; }
     };
 
     const addBudget = async (budget: any) => {
         try { const b = await createBudget(budget); setBudgets(prev => [...prev, b]); }
-        catch (e) { console.error(e); }
+        catch (e) { console.error(e); throw e; }
     };
 
     const updateBudgetAction = async (budget: Budget) => {
         try { const updated = await updateBudget(budget); setBudgets(prev => prev.map(b => b.id === updated.id ? updated : b)); }
-        catch (e) { console.error(e); }
+        catch (e) { console.error(e); throw e; }
     };
 
-    const deleteBudgetAction = async (id: number) => {
+    const deleteBudgetAction = async (id: string) => {
         try { await deleteBudget(id); setBudgets(prev => prev.filter(b => b.id !== id)); }
-        catch (e) { console.error(e); }
+        catch (e) { console.error(e); throw e; }
     };
 
     const addInternalBudgetAction = async (budget: Omit<InternalBudget, 'id'>) => {
         try { const b = await createInternalBudget(budget); setInternalBudgets(prev => [...prev, b]); }
-        catch (e) { console.error(e); }
+        catch (e) { console.error(e); throw e; }
     };
 
     const updateInternalBudgetAction = async (budget: InternalBudget) => {
         try { const updated = await updateInternalBudget(budget); setInternalBudgets(prev => prev.map(b => b.id === updated.id ? updated : b)); }
-        catch (e) { console.error(e); }
+        catch (e) { console.error(e); throw e; }
     };
 
-    const deleteInternalBudgetAction = async (id: string) => {
+    const deleteInternalBudgetAction = async (id: number) => {
         try { await deleteInternalBudget(id); setInternalBudgets(prev => prev.filter(b => b.id !== id)); }
-        catch (e) { console.error(e); }
+        catch (e) { console.error(e); throw e; }
     };
 
     const addTax = async (tax: any) => {
@@ -877,21 +885,33 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const newSop = await createSOP(sop);
             setSops(prev => [...prev, newSop]);
-        } catch (e) { console.error(e); }
+            await addNotification('Sucesso', 'Procedimento criado com sucesso.', 'success');
+        } catch (e) {
+            console.error(e);
+            await addNotification('Erro', 'Falha ao criar procedimento.', 'error');
+        }
     };
 
     const updateSOPAction = async (sop: SOP) => {
         try {
             const updated = await updateSOP(sop);
             setSops(prev => prev.map(s => s.id === updated.id ? updated : s));
-        } catch (e) { console.error(e); }
+            await addNotification('Sucesso', 'Procedimento atualizado.', 'success');
+        } catch (e) {
+            console.error(e);
+            await addNotification('Erro', 'Falha ao atualizar procedimento.', 'error');
+        }
     };
 
     const removeSOPAction = async (id: number) => {
         try {
             await deleteSOP(id);
             setSops(prev => prev.filter(s => s.id !== id));
-        } catch (e) { console.error(e); }
+            await addNotification('Sucesso', 'Procedimento excluído.', 'success');
+        } catch (e) {
+            console.error(e);
+            await addNotification('Erro', 'Falha ao excluir procedimento.', 'error');
+        }
     };
 
     const addNotification = async (title: string, message: string, type: any) => {
@@ -1069,7 +1089,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addFollowUp, removeFollowUp,
         addFeedback, removeFeedback, addReferral, removeReferral,
         addComplaint, removeComplaint, addUpsellOpportunity, removeUpsellOpportunity, addImportantDate, removeImportantDate,
-        addMarketingMetric, removeMarketingMetric, addEditorialContent, updateEditorialContentData, removeEditorialContent,
+        addMarketingMetric, removeMarketingMetric, updateMarketingMetricData, addEditorialContent, updateEditorialContentData, removeEditorialContent,
         addClient, updateClientData, removeClient, addInteraction, addClientTag: addClientTagAction, removeClientTag: removeClientTagAction, createTag: createTagAction,
         addTransaction, updateTransactionData: updateTransactionDataAction, removeTransaction, toggleTransactionStatus, addBudget, updateBudget: updateBudgetAction, deleteBudget: deleteBudgetAction,
         addInternalBudget: addInternalBudgetAction, updateInternalBudget: updateInternalBudgetAction, deleteInternalBudget: deleteInternalBudgetAction,

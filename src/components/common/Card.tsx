@@ -17,13 +17,13 @@ interface CardProps {
  */
 export const Card: React.FC<CardProps> = ({ title, children, className = '', titleClassName = '' }) => {
   return (
-    <div className={`bg-white rounded-xl shadow-md border border-gray-200/80 overflow-hidden ${className}`}>
+    <div className={`bg-white rounded-[32px] shadow-sm border-2 border-black/5 overflow-hidden transition-all hover:shadow-xl ${className}`}>
       {title && (
-        <div className="p-4 sm:p-6 border-b border-gray-200">
-          <h3 className={`text-lg font-semibold text-brand-dark ${titleClassName}`}>{title}</h3>
+        <div className="px-8 py-6 border-b border-black/5">
+          <h3 className={`text-sm font-black text-black uppercase tracking-widest ${titleClassName}`}>{title}</h3>
         </div>
       )}
-      <div className="p-4 sm:p-6">
+      <div className="p-8">
         {children}
       </div>
     </div>
